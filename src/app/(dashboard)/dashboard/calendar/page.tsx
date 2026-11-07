@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Fragment } from "react";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/require-user";
 import { PageHeader, Widget } from "@/components/dashboard/widgets";
@@ -82,6 +83,11 @@ export default async function CalendarPage({
     ...Array.from({ length: firstDow }, () => null),
     ...Array.from({ length: daysInMonth }, (_, i) => `${year}-${String(month + 1).padStart(2, "0")}-${String(i + 1).padStart(2, "0")}`),
   ];
+  const weeks: (string | null)[][] = [];
+  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
+  const weekPnl = (w: (string | null)[]) => w.reduce((a, d) => a + (d ? (days.get(d)?.pnl ?? 0) : 0), 0);
+  const weekTrades = (w: (string | null)[]) => w.reduce((a, d) => a + (d ? (days.get(d)?.trades ?? 0) : 0), 0);
+  const monthPnl = [...days.values()].reduce((a, d) => a + d.pnl, 0);
 
   const prev = new Date(Date.UTC(year, month - 1, 1));
   const next = new Date(Date.UTC(year, month + 1, 1));
@@ -131,32 +137,57 @@ export default async function CalendarPage({
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <div>
-          <div className="grid grid-cols-7 gap-px border border-border bg-border">
-            {["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"].map((d) => (
+          <div className="grid gap-px border border-border bg-border" style={{ gridTemplateColumns: "repeat(7, 1fr) 92px" }}>
+            {["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su", "Week"].map((d) => (
               <div key={d} className="bg-bg-elevated py-2 text-center font-mono text-[10px] uppercase tracking-wider text-text-faint">
                 {d}
               </div>
             ))}
-            {cells.map((day, i) =>
-              day === null ? (
-                <div key={`x${i}`} className="min-h-16 bg-bg sm:min-h-20" />
-              ) : (
-                <Link
-                  key={day}
-                  href={`${base}&day=${day}`}
-                  className={`min-h-16 p-2 transition-colors sm:min-h-20 ${cellTone(day)} ${selectedDay === day ? "outline outline-1 outline-accent" : "hover:bg-surface"}`}
-                >
-                  <p className="numeric text-[11px]">{Number(day.slice(-2))}</p>
-                  {days.get(day) && (
-                    <div className="mt-1">
-                      <p className="font-mono text-[10px] leading-tight">{days.get(day)!.trades}t</p>
-                      {metric === "r" && <p className="numeric text-[10px] leading-tight">{formatR(days.get(day)!.r)}</p>}
-                      {days.get(day)!.hasReview && <p className="text-[9px] text-text-faint">reviewed</p>}
-                    </div>
+            {weeks.map((week, wi) => {
+              const wpnl = weekPnl(week);
+              const wt = weekTrades(week);
+              return (
+                <Fragment key={wi}>
+                  {week.map((day, i) =>
+                    day === null ? (
+                      <div key={`x${wi}-${i}`} className="min-h-16 bg-bg sm:min-h-20" />
+                    ) : (
+                      <Link
+                        key={day}
+                        href={`${base}&day=${day}`}
+                        className={`min-h-16 p-2 transition-colors sm:min-h-20 ${cellTone(day)} ${selectedDay === day ? "outline outline-1 outline-accent" : "hover:bg-surface"}`}
+                      >
+                        <p className="numeric text-[11px]">{Number(day.slice(-2))}</p>
+                        {days.get(day) && (
+                          <div className="mt-1">
+                            <p className="font-mono text-[10px] leading-tight">{days.get(day)!.trades}t</p>
+                            {metric === "r" && <p className="numeric text-[10px] leading-tight">{formatR(days.get(day)!.r)}</p>}
+                            {days.get(day)!.hasReview && <p className="text-[9px] text-text-faint">reviewed</p>}
+                          </div>
+                        )}
+                      </Link>
+                    )
                   )}
-                </Link>
-              )
-            )}
+                  <div className={`flex min-h-16 flex-col justify-center bg-bg-elevated px-2 sm:min-h-20 ${wpnl > 0 ? "text-long" : wpnl < 0 ? "text-short" : "text-text-faint"}`}>
+                    {wt > 0 ? (
+                      <>
+                        <p className={`numeric text-xs font-medium ${wpnl >= 0 ? "text-long" : "text-short"}`}>{formatCurrency(wpnl)}</p>
+                        <p className="font-mono text-[9px] text-text-faint">{wt}t</p>
+                      </>
+                    ) : (
+                      <p className="numeric text-xs">—</p>
+                    )}
+                  </div>
+                </Fragment>
+              );
+            })}
+            {/* Month total row */}
+            <div className="bg-bg-elevated px-2 py-2.5 font-mono text-[10px] uppercase tracking-wider text-text-faint" style={{ gridColumn: "1 / 8" }}>
+              Month total
+            </div>
+            <div className={`bg-bg-elevated px-2 py-2.5 numeric text-xs font-semibold ${monthPnl >= 0 ? "text-long" : "text-short"}`}>
+              {formatCurrency(monthPnl)}
+            </div>
           </div>
           <p className="mt-3 text-[11px] text-text-faint">
             Neutral by default — switch the metric to view trades or rule adherence instead of R.
