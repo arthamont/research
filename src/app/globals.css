@@ -1,0 +1,174 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ── NAYXOR design tokens ─────────────────────────────────────────────── */
+/* Dark is the primary brand identity. Light is independently art-directed. */
+
+:root {
+  /* dark (default) */
+  --bg: #090b0e;
+  --bg-elevated: #12161c;
+  --surface: #171b21;
+  --surface-hover: #1d222a;
+  --text: #f1f0ec;
+  --text-secondary: #a3aab3;
+  --text-faint: #5f6873;
+  --accent: #d5a267;
+  --accent-soft: rgba(213, 162, 103, 0.12);
+  --accent-text: #e8c793;
+  --border: #232a33;
+  --border-strong: #333c47;
+  --long: #4da886;
+  --short: #c45c5c;
+  --warning: #d5a267;
+  --info: #6f9fd8;
+  --ring: rgba(213, 162, 103, 0.45);
+  --nav-bg: rgba(9, 11, 14, 0.72);
+  --selection: rgba(213, 162, 103, 0.25);
+}
+
+.light {
+  --bg: #f7f6f2;
+  --bg-elevated: #ffffff;
+  --surface: #eeede8;
+  --surface-hover: #e6e4dd;
+  --text: #14171b;
+  --text-secondary: #626b75;
+  --text-faint: #9aa1aa;
+  --accent: #8c5e2e;
+  --accent-soft: rgba(140, 94, 46, 0.1);
+  --accent-text: #7a5125;
+  --border: #dddad2;
+  --border-strong: #c8c4b9;
+  --long: #1e7a5a;
+  --short: #b04a4a;
+  --warning: #8c5e2e;
+  --info: #3f6fa8;
+  --ring: rgba(140, 94, 46, 0.4);
+  --nav-bg: rgba(247, 246, 242, 0.75);
+  --selection: rgba(140, 94, 46, 0.18);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-text: var(--text);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-faint: var(--text-faint);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-text: var(--accent-text);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-long: var(--long);
+  --color-short: var(--short);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+
+  --font-sans: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-ibm-plex-mono), ui-monospace, monospace;
+}
+
+/* ── Base ─────────────────────────────────────────────────────────────── */
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--selection);
+}
+
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* ── Typography helpers ───────────────────────────────────────────────── */
+
+.micro-label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.display-xl {
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 0.95;
+}
+
+.numeric {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Signature geometry (hero) ────────────────────────────────────────── */
+
+.grid-lines {
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: radial-gradient(ellipse 90% 80% at 50% 40%, black 20%, transparent 75%);
+  opacity: 0.35;
+}
+
+.hairline {
+  border-color: var(--border);
+}
+
+/* ── Motion ───────────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* NAYXOR loader — precision line sweep */
+@keyframes nx-loader {
+  0% { transform: scaleX(0); transform-origin: left; }
+  45% { transform: scaleX(1); transform-origin: left; }
+  55% { transform: scaleX(1); transform-origin: right; }
+  100% { transform: scaleX(0); transform-origin: right; }
+}
+
+.nx-loader {
+  animation: nx-loader 1.4s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+@keyframes nx-tick {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 1; }
+}
+
+.nx-tick {
+  animation: nx-tick 1.2s ease-in-out infinite;
+}
+
+/* thin scrollbars */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }

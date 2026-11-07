@@ -1,0 +1,510 @@
+// NAYXOR — data model
+// Generator + datasource
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum Role {
+  OWNER
+}
+
+enum Market {
+  FUTURES
+  FOREX
+  INDIA
+}
+
+enum Direction {
+  LONG
+  SHORT
+}
+
+enum TradeStatus {
+  OPEN
+  CLOSED
+  CANCELLED
+}
+
+enum TradingSession {
+  ASIA
+  LONDON
+  NEW_YORK
+  INDIA
+  OVERLAP
+  OTHER
+}
+
+enum PublishStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum AccountType {
+  PERSONAL
+  PROP
+}
+
+enum ChecklistStage {
+  PREPARATION
+  EXECUTION
+  POST_SESSION
+}
+
+enum Bias {
+  BULLISH
+  BEARISH
+  NEUTRAL
+}
+
+enum ScreenshotKind {
+  BEFORE
+  AFTER
+  CONTEXT
+  OTHER
+}
+
+enum EventImpact {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+// ─── Auth.js (NextAuth) ──────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String? // null when the account only signs in with Google
+  role          Role      @default(OWNER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts           Account[]
+  sessions           Session[]
+  settings           UserSettings?
+  tradingAccounts    TradingAccount[]
+  setups             Setup[]
+  trades             Trade[]
+  checklistTemplates ChecklistTemplate[]
+  checklistEntries   ChecklistEntry[]
+  tradingPlans       TradingPlan[]
+  dailyReviews       DailyReview[]
+  weeklyReviews      WeeklyReview[]
+  watchlistItems     WatchlistItem[]
+  marketNotes        MarketNote[]
+  economicEvents     EconomicEvent[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─── Owner configuration ─────────────────────────────────────────────────────
+
+model UserSettings {
+  id     String @id @default(cuid())
+  userId String @unique
+
+  // Editable personal trading rules (owner's chosen framework)
+  maxTradesPerDay      Int      @default(1)
+  futuresPropRiskPct   Decimal  @default(0.5) @db.Decimal(5, 2)
+  forexPropRiskPct     Decimal  @default(1.0) @db.Decimal(5, 2)
+  targetRiskReward     Decimal  @default(3.0) @db.Decimal(6, 2)
+  minRiskReward        Decimal  @default(3.0) @db.Decimal(6, 2)
+  breakevenAfterR      Decimal  @default(2.0) @db.Decimal(6, 2)
+  allowPartialExits    Boolean  @default(false)
+  noRevengeTrading     Boolean  @default(true)
+  noChasingMissedSetups Boolean @default(true)
+  reviewWithinHours    Int      @default(24)
+  extraRules           Json     @default("[]") // [{ key, label, enabled }]
+
+  // Preferences
+  timezone             String   @default("Asia/Kolkata")
+  defaultMarket        Market   @default(FUTURES)
+  publicMetricsEnabled Boolean  @default(false)
+  theme                String   @default("dark")
+
+  // Editable identity / about content
+  bio                  String?  @db.Text
+  journeyTimeline      Json     @default("[]") // [{ year, title, body }]
+  tradingInterests     String[] @default([])
+  riskApproach         String?  @db.Text
+  longTermObjectives   String?  @db.Text
+  socialLinks          Json     @default("{}") // { x, instagram, youtube, ... }
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ─── Trading domain ──────────────────────────────────────────────────────────
+
+model TradingAccount {
+  id            String      @id @default(cuid())
+  userId        String
+  name          String
+  type          AccountType
+  market        Market?
+  currency      String      @default("USD")
+  initialBalance Decimal?   @db.Decimal(14, 2)
+  propFirm      String?
+  notes         String?     @db.Text
+  isActive      Boolean     @default(true)
+  createdAt     DateTime    @default(now())
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trades Trade[]
+}
+
+/// Instrument metadata carries the contract economics so P&L formulas are
+/// explicit per market (futures points/ticks, forex pips/lots, Indian shares).
+model Instrument {
+  id           String  @id @default(cuid())
+  symbol       String  @unique // "NQ", "ES", "EURUSD", "XAUUSD", "NIFTY", "BANKNIFTY"
+  name         String
+  market       Market
+  exchange     String? // "CME", "NSE", ...
+  currency     String  @default("USD")
+  tickSize     Decimal @db.Decimal(18, 8) // minimum price increment
+  tickValue    Decimal @db.Decimal(18, 8) // currency value of one tick per contract/unit
+  pointValue   Decimal @db.Decimal(18, 8) // currency value of one full point per contract/unit
+  pipSize      Decimal? @db.Decimal(18, 8) // forex pip size (0.0001 / 0.01)
+  lotSize      Decimal? @db.Decimal(18, 4) // units per 1.0 lot (forex: 100000)
+  notes        String?
+  isActive     Boolean @default(true)
+
+  trades         Trade[]
+  watchlistItems WatchlistItem[]
+}
+
+model Setup {
+  id          String  @id @default(cuid())
+  userId      String
+  name        String
+  description String? @db.Text
+  market      Market?
+  rules       String? @db.Text // markdown checklist of setup criteria
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trades Trade[]
+
+  @@unique([userId, name])
+}
+
+model Trade {
+  id        String   @id @default(cuid())
+  userId    String
+  accountId String?
+  instrumentId String
+  setupId   String?
+
+  market    Market
+  direction Direction
+  status    TradeStatus @default(OPEN)
+  session   TradingSession?
+
+  openedAt  DateTime
+  closedAt  DateTime?
+  timezone  String   @default("UTC") // IANA zone the times were entered in
+
+  entryPrice  Decimal  @db.Decimal(18, 6)
+  stopLoss    Decimal? @db.Decimal(18, 6)
+  takeProfit  Decimal? @db.Decimal(18, 6)
+  exitPrice   Decimal? @db.Decimal(18, 6)
+  positionSize Decimal @default(1) @db.Decimal(18, 6) // contracts / lots / shares
+  currency    String   @default("USD")
+
+  feesCommission Decimal @default(0) @db.Decimal(14, 4)
+  grossPnl       Decimal? @db.Decimal(14, 4)
+  netPnl         Decimal? @db.Decimal(14, 4)
+  plannedRisk    Decimal? @db.Decimal(14, 4) // currency amount risked as planned
+  realizedR      Decimal? @db.Decimal(10, 3)
+
+  // Journal narrative
+  thesis          String? @db.Text
+  executionNotes  String? @db.Text
+  emotionalNotes  String? @db.Text
+  mistakes        String? @db.Text
+  lessons         String? @db.Text
+  executionGrade  Int? // 1–5
+  ruleCompliant   Boolean? // did this trade follow the owner's rules?
+
+  // Publication — a trade only becomes public through explicit publication
+  isPublic    Boolean @default(false)
+  publicSlug  String? @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account     TradingAccount?   @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  instrument  Instrument        @relation(fields: [instrumentId], references: [id])
+  setup       Setup?            @relation(fields: [setupId], references: [id], onDelete: SetNull)
+  screenshots TradeScreenshot[]
+  tags        TradeTag[]
+  caseStudy   CaseStudy?
+
+  @@index([userId, openedAt])
+  @@index([userId, market])
+}
+
+model TradeTag {
+  id     String  @id @default(cuid())
+  name   String  @unique
+  trades Trade[]
+}
+
+model TradeScreenshot {
+  id       String         @id @default(cuid())
+  tradeId  String
+  kind     ScreenshotKind @default(OTHER)
+  filePath String // path under storage/uploads — served via authenticated route
+  caption  String?
+  createdAt DateTime      @default(now())
+
+  trade Trade @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+}
+
+// ─── Plans, checklists, reviews ─────────────────────────────────────────────
+
+model TradingPlan {
+  id           String   @id @default(cuid())
+  userId       String
+  date         DateTime @db.Date
+  narrative    String?  @db.Text // daily directional narrative
+  scenarios    Json     @default("[]") // [{ label, condition, action }]
+  keyLevels    Json     @default("[]") // [{ instrument, price, note }]
+  marketFocus  Market[]
+  sessionFocus TradingSession[]
+  readiness    Json     @default("{}") // { sleep, mindset, notes }
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+}
+
+model ChecklistTemplate {
+  id       String         @id @default(cuid())
+  userId   String
+  name     String
+  stage    ChecklistStage
+  items    Json           // [{ key, label }]
+  isDefault Boolean       @default(false)
+  sortOrder Int           @default(0)
+  createdAt DateTime      @default(now())
+
+  user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entries ChecklistEntry[]
+}
+
+model ChecklistEntry {
+  id         String   @id @default(cuid())
+  userId     String
+  templateId String
+  date       DateTime @db.Date
+  checked    Json     @default("[]") // [itemKey]
+  completedAt DateTime?
+  createdAt  DateTime @default(now())
+
+  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  template ChecklistTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, date])
+}
+
+model DailyReview {
+  id              String   @id @default(cuid())
+  userId          String
+  date            DateTime @db.Date
+  summary         String?  @db.Text
+  executionGrade  Int?     // 1–5
+  adherenceScore  Decimal? @db.Decimal(5, 2) // % of checklist items completed
+  mistakes        String?  @db.Text
+  lessons         String?  @db.Text
+  emotionalReview String?  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+}
+
+model WeeklyReview {
+  id                   String   @id @default(cuid())
+  userId               String
+  weekStart            DateTime @db.Date
+  tradesTaken          Int      @default(0)
+  tradesAvoided        Int      @default(0)
+  ruleViolations       Int      @default(0)
+  executionGrade       Int?
+  strongestSetup       String?
+  recurringMistakes    String?  @db.Text
+  improvementPriorities String? @db.Text
+  nextWeekPlan         String?  @db.Text
+  summary              String?  @db.Text
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, weekStart])
+}
+
+// ─── Content (public site) ───────────────────────────────────────────────────
+
+model ResearchArticle {
+  id           String        @id @default(cuid())
+  slug         String        @unique
+  title        String
+  excerpt      String?       @db.Text
+  content      String        @db.Text // markdown
+  coverImage   String?
+  market       Market?
+  instruments  String[]      @default([])
+  tags         String[]      @default([])
+  readingTime  Int?          // minutes
+  status       PublishStatus @default(DRAFT)
+  isDemo       Boolean       @default(false)
+  publishedAt  DateTime?
+  seoTitle     String?
+  seoDescription String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+/// A curated public trade story. May link to a real Trade, or stand alone
+/// (e.g. demonstration entries added before real records exist).
+model CaseStudy {
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  title       String
+  summary     String?       @db.Text
+  content     String        @db.Text // markdown: context → hypothesis → lesson
+  tradeId     String?       @unique
+  market      Market
+  instrument  String
+  direction   Direction
+  session     TradingSession?
+  setup       String?
+  tradeDate   DateTime
+  rrPlanned   Decimal?      @db.Decimal(8, 2)
+  rrActual    Decimal?      @db.Decimal(8, 2)
+  grade       Int?          // 1–5 execution grade
+  chartImage  String?
+  tags        String[]      @default([])
+  status      PublishStatus @default(DRAFT)
+  isDemo      Boolean       @default(false)
+  publishedAt DateTime?
+  seoTitle    String?
+  seoDescription String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  trade Trade? @relation(fields: [tradeId], references: [id], onDelete: SetNull)
+}
+
+/// Public playbook entry — the owner’s documented methodology.
+model PlaybookItem {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  title     String
+  summary   String?  @db.Text
+  content   String   @db.Text // markdown
+  sortOrder Int      @default(0)
+  market    Market?
+  status    PublishStatus @default(PUBLISHED)
+  isDemo    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ─── Workspace extras ────────────────────────────────────────────────────────
+
+model WatchlistItem {
+  id            String    @id @default(cuid())
+  userId        String
+  instrumentId  String
+  notes         String?   @db.Text
+  bias          Bias      @default(NEUTRAL)
+  keyLevels     Json      @default("[]") // [{ price, label }]
+  setupStatus   String?   // e.g. "watching", "forming", "triggered"
+  lastReviewedAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  instrument Instrument @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, instrumentId])
+}
+
+model MarketNote {
+  id        String   @id @default(cuid())
+  userId    String
+  date      DateTime @db.Date
+  market    Market?
+  content   String   @db.Text
+  tags      String[] @default([])
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model EconomicEvent {
+  id        String      @id @default(cuid())
+  userId    String?
+  title     String
+  currency  String?
+  impact    EventImpact @default(MEDIUM)
+  eventAt   DateTime
+  notes     String?
+  createdAt DateTime    @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
