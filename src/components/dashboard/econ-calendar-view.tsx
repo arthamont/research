@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { BqCalendarRow } from "@/lib/econ-calendar";
+import { usMarketHolidays, monthWeeks, weekHeadline } from "@/lib/holidays";
 import { DayNoteEditor } from "./day-note";
 import { cn } from "@/lib/utils";
 
@@ -11,80 +12,73 @@ const chip = (active: boolean) =>
     active ? "border-accent text-accent-text" : "border-border text-text-secondary hover:border-border-strong"
   );
 
-function fmt(v: number | null, decimals = 2) {
-  if (v === null || v === undefined) return "—";
-  return v.toLocaleString("en-US", { maximumFractionDigits: decimals });
-}
+/** Stable category → color mapping (real data, no invented impact levels). */
+const CATEGORY_TONES: Record<string, string> = {
+  Inflation: "var(--short)",
+  Employment: "var(--accent)",
+  Rates: "var(--info)",
+  Growth: "var(--long)",
+  Credit: "var(--warning)",
+  Housing: "var(--long)",
+  Trade: "var(--info)",
+  Business: "var(--text-secondary)",
+  Sentiment: "var(--warning)",
+};
+const tone = (c: string) => CATEGORY_TONES[c] ?? "var(--text-faint)";
 
-function Change({ row }: { row: BqCalendarRow }) {
-  if (row.change_abs === null) return <span className="text-text-faint">—</span>;
-  const positive = row.change_abs > 0;
-  // direction tells us whether rising is economically favourable
-  const good = row.direction === "higher_better" ? positive : row.direction === "lower_better" ? !positive : null;
-  const cls = good === null ? "text-text-secondary" : good ? "text-long" : "text-short";
-  return (
-    <span className={`numeric ${cls}`}>
-      {positive ? "+" : ""}
-      {fmt(row.change_abs, row.decimals)}
-      {row.change_pct !== null && <span className="text-text-faint"> ({positive ? "+" : ""}{fmt(row.change_pct, 2)}%)</span>}
-    </span>
-  );
-}
 
 export function EconCalendarView({ rows, noteDate, notes }: { rows: BqCalendarRow[]; noteDate: string; notes: Record<string, string> }) {
-  const [state, setState] = useState<"upcoming" | "released" | "all">("upcoming");
   const [category, setCategory] = useState<string | null>(null);
   const [q, setQ] = useState("");
-  const [weekOffset, setWeekOffset] = useState(0);
   const [noteDay, setNoteDay] = useState(noteDate);
 
-  const categories = useMemo(() => [...new Set(rows.map((r) => r.category))].sort(), [rows]);
+  const [y0, m0] = noteDate.split("-").map(Number);
+  const [view, setView] = useState({ year: y0, month: m0 - 1 });
 
-  // Week frame: Sunday → Saturday
-  const { weekStart, weekEnd, weekLabel } = useMemo(() => {
-    const now = new Date(noteDate + "T00:00:00Z");
-    const dow = now.getUTCDay(); // Sunday = 0
-    const start = new Date(now);
-    start.setUTCDate(start.getUTCDate() - dow + weekOffset * 7);
-    const end = new Date(start);
-    end.setUTCDate(end.getUTCDate() + 6);
-    const iso = (d: Date) => d.toISOString().slice(0, 10);
-    const lbl = `${start.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" })} – ${end.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" })}`;
-    return { weekStart: iso(start), weekEnd: iso(end), weekLabel: lbl };
-  }, [noteDate, weekOffset]);
+  const categories = useMemo(() => [...new Set(rows.map((r) => r.category))].sort(), [rows]);
+  const holidays = useMemo(() => usMarketHolidays(view.year), [view.year]);
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return rows.filter((r) => {
-      if (!r.next_release || r.next_release < weekStart || r.next_release > weekEnd) return false;
-      if (state !== "all" && r.release_state !== state) return false;
       if (category && r.category !== category) return false;
       if (needle && !`${r.name} ${r.code}`.toLowerCase().includes(needle)) return false;
       return true;
     });
-  }, [rows, state, category, q, weekStart, weekEnd]);
+  }, [rows, category, q]);
 
-  const groups = useMemo(() => {
-    const g = new Map<string, BqCalendarRow[]>();
+  const byDay = useMemo(() => {
+    const map = new Map<string, BqCalendarRow[]>();
     for (const r of filtered) {
-      const key = r.next_release ?? "Unscheduled";
-      g.set(key, [...(g.get(key) ?? []), r]);
+      if (!r.next_release) continue;
+      map.set(r.next_release, [...(map.get(r.next_release) ?? []), r]);
     }
-    return [...g.entries()];
+    return map;
   }, [filtered]);
 
+  const weeks = useMemo(() => monthWeeks(view.year, view.month), [view]);
+  const monthLabel = new Date(Date.UTC(view.year, view.month, 1)).toLocaleDateString("en-GB", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+  const isCurrentMonth = view.year === y0 && view.month === m0 - 1;
+  const nav = (d: number) => {
+    const t = new Date(Date.UTC(view.year, view.month + d, 1));
+    setView({ year: t.getUTCFullYear(), month: t.getUTCMonth() });
+  };
+
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+    <div className="grid gap-6 xl:grid-cols-[1fr_320px]">
       <div>
-        {/* Week navigation — Sunday to Saturday */}
-        <div className="mb-4 flex items-center justify-between gap-4">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <button onClick={() => setWeekOffset((w) => w - 1)} className="border border-border px-3 py-1.5 font-mono text-xs text-text-secondary hover:border-accent" aria-label="Previous week">←</button>
-            <h2 className="text-lg font-semibold tracking-tight">{weekLabel}</h2>
-            <button onClick={() => setWeekOffset((w) => w + 1)} className="border border-border px-3 py-1.5 font-mono text-xs text-text-secondary hover:border-accent" aria-label="Next week">→</button>
-            {weekOffset !== 0 && (
-              <button onClick={() => setWeekOffset(0)} className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-faint hover:text-accent-text">
-                this week
+            <button onClick={() => nav(-1)} className="border border-border px-3 py-1.5 font-mono text-xs text-text-secondary hover:border-accent" aria-label="Previous month">←</button>
+            <h2 className="display-xl text-2xl sm:text-3xl">{monthLabel}</h2>
+            <button onClick={() => nav(1)} className="border border-border px-3 py-1.5 font-mono text-xs text-text-secondary hover:border-accent" aria-label="Next month">→</button>
+            {!isCurrentMonth && (
+              <button onClick={() => setView({ year: y0, month: m0 - 1 })} className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-faint hover:text-accent-text">
+                this month
               </button>
             )}
           </div>
@@ -96,11 +90,6 @@ export function EconCalendarView({ rows, noteDate, notes }: { rows: BqCalendarRo
             className="w-52 border border-border bg-surface px-3 py-1.5 text-xs text-text placeholder:text-text-faint focus:border-accent focus:outline-none"
           />
         </div>
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          {(["upcoming", "released", "all"] as const).map((s) => (
-            <button key={s} onClick={() => setState(s)} className={chip(state === s)}>{s}</button>
-          ))}
-        </div>
         <div className="mb-6 flex flex-wrap gap-1.5">
           {categories.map((c) => (
             <button key={c} onClick={() => setCategory(category === c ? null : c)} className={chip(category === c)}>
@@ -109,63 +98,91 @@ export function EconCalendarView({ rows, noteDate, notes }: { rows: BqCalendarRo
           ))}
         </div>
 
-        {groups.length === 0 && (
-          <p className="border border-dashed border-border px-8 py-12 text-center text-sm text-text-faint">
-            No releases match these filters.
-          </p>
-        )}
-
-        <div className="space-y-8">
-          {groups.map(([day, items]) => (
-            <section key={day}>
-              <div className="mb-2 flex items-center justify-between border-b border-border pb-2">
-                <button
-                  onClick={() => setNoteDay(day)}
-                  className="flex items-center gap-2 text-left"
-                  title="Load day note"
-                >
-                  <h2 className="font-mono text-sm font-medium text-text">{day}</h2>
-                  {day === noteDay && <span className="font-mono text-[9px] uppercase tracking-widest text-accent">note ↓</span>}
-                </button>
-                <span className="micro-label">{items.length} release{items.length === 1 ? "" : "s"}</span>
-              </div>
-              <ul className="divide-y divide-border/60">
-                {items.map((r) => (
-                  <li key={r.code} className="grid gap-1.5 py-3 sm:grid-cols-[1fr_auto] sm:items-baseline sm:gap-6">
-                    <div>
-                      <div className="flex flex-wrap items-baseline gap-2">
-                        <span className="text-sm font-medium text-text">{r.name}</span>
-                        <span className="font-mono text-[10px] text-text-faint">{r.code}</span>
-                      </div>
-                      <div className="mt-1 flex flex-wrap gap-1.5">
-                        <span className="border border-border px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-text-faint">{r.category}</span>
-                        <span className="border border-border px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-text-faint">{r.freq_long}</span>
-                        {r.release_state === "released" ? (
-                          <span className="border border-long/40 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-long">released</span>
-                        ) : (
-                          <span className="border border-accent/50 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-accent-text">
-                            {r.days_until_next !== null ? `in ${r.days_until_next}d` : "scheduled"}
-                          </span>
+        {/* Month grid — WEEK | MON–FRI */}
+        <div className="overflow-x-auto">
+          <div className="min-w-[860px]">
+            <div className="grid grid-cols-[90px_repeat(5,1fr)] border-b border-border pb-2">
+              <span className="micro-label">Week</span>
+              {["Mon", "Tue", "Wed", "Thu", "Fri"].map((d) => (
+                <span key={d} className="micro-label text-center">{d}</span>
+              ))}
+            </div>
+            {weeks.map((week, wi) => {
+              const weekReleases = week.flatMap((d) => byDay.get(d) ?? []);
+              const headline = weekHeadline(weekReleases.map((r) => r.name));
+              return (
+                <div key={wi} className="grid grid-cols-[90px_repeat(5,1fr)] border-b border-border">
+                  <div className="border-r border-border py-3 pr-3">
+                    {headline && <p className="text-xs font-medium text-accent-text">{headline}</p>}
+                    <p className="mt-1 font-mono text-[9px] leading-snug text-text-faint">
+                      {weekReleases.length ? `${weekReleases.length} release${weekReleases.length === 1 ? "" : "s"}` : "quiet"}
+                    </p>
+                  </div>
+                  {[1, 2, 3, 4, 5].map((dow) => {
+                    const day = week.find((d) => new Date(d + "T00:00:00Z").getUTCDay() === dow);
+                    const holiday = day ? holidays.get(day) : undefined;
+                    const releases = day ? byDay.get(day) ?? [] : [];
+                    const isToday = day === noteDate;
+                    return (
+                      <button
+                        key={dow}
+                        onClick={() => day && setNoteDay(day)}
+                        disabled={!day}
+                        className={cn(
+                          "min-h-[110px] border-r border-border p-2 text-left align-top transition-colors last:border-r-0",
+                          day ? "hover:bg-surface" : "bg-surface/30",
+                          noteDay === day && "bg-accent-soft"
                         )}
-                      </div>
-                    </div>
-                    <div className="flex items-baseline gap-4 font-mono text-[11px] sm:text-right">
-                      <span className="text-text-faint">
-                        {fmt(r.latest_value, r.decimals)}{r.display_unit ? ` ${r.display_unit}` : ""}
-                        <span className="mx-1 text-text-faint/60">prev</span>{fmt(r.prior_value, r.decimals)}
-                      </span>
-                      <Change row={r} />
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </section>
+                      >
+                        {day && (
+                          <>
+                            <div className="flex items-center justify-between">
+                              <span className={cn("numeric text-sm", isToday ? "font-semibold text-accent" : "text-text")}>
+                                {Number(day.slice(-2))}
+                              </span>
+                              {isToday && <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden />}
+                            </div>
+                            {holiday && (
+                              <p className="mt-1 border border-warning/40 bg-warning/10 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-warning">
+                                {holiday}
+                              </p>
+                            )}
+                            <ul className="mt-1.5 space-y-1">
+                              {releases.map((r) => (
+                                <li key={r.code} className="flex items-start gap-1.5 text-[11px] leading-tight">
+                                  <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: tone(r.category) }} aria-hidden />
+                                  <span className="text-text-secondary">{r.name}</span>
+                                </li>
+                              ))}
+                            </ul>
+                            {!holiday && releases.length === 0 && (
+                              <p className="mt-1.5 text-[10px] italic text-text-faint">No news</p>
+                            )}
+                          </>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Legend */}
+        <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1.5 border-t border-border pt-3">
+          {categories.map((c) => (
+            <span key={c} className="flex items-center gap-1.5 font-mono text-[10px] text-text-faint">
+              <span className="h-1.5 w-1.5 rounded-full" style={{ background: tone(c) }} aria-hidden />
+              {c}
+            </span>
           ))}
+          <span className="ml-auto text-[10px] text-text-faint">Dates only — no times or impact ratings in the feed. Holiday = NYSE closed.</span>
         </div>
       </div>
 
       {/* Day note sidebar */}
-      <aside className="h-fit border border-border bg-bg-elevated p-4 lg:sticky lg:top-10">
+      <aside className="h-fit border border-border bg-bg-elevated p-4 xl:sticky xl:top-10">
         <p className="micro-label mb-1">Day note — {noteDay}</p>
         <p className="mb-3 text-[11px] text-text-faint">How is this day going to behave? Private — workspace only.</p>
         <DayNoteEditor key={noteDay} date={noteDay} initial={notes[noteDay] ?? ""} />
