@@ -33,66 +33,11 @@ export function SettingsForm({ settings }: { settings: UserSettings | null }) {
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
-  const setBool = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    setForm((f) => ({ ...f, [k]: e.target.checked }));
 
   const num = (v: string) => (v === "" ? 0 : parseFloat(v));
 
   return (
     <div className="space-y-10">
-      {/* Trading rules */}
-      <section>
-        <h2 className="micro-label mb-4">Trading rules — your framework</h2>
-        <div className="grid gap-4 border border-border bg-bg-elevated p-5 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <label className={lbl}>Max trades / day</label>
-            <input type="number" min="1" max="20" className={field} value={form.maxTradesPerDay} onChange={set("maxTradesPerDay")} />
-          </div>
-          <div>
-            <label className={lbl}>Futures prop risk %</label>
-            <input type="number" step="0.1" className={field} value={form.futuresPropRiskPct} onChange={set("futuresPropRiskPct")} />
-          </div>
-          <div>
-            <label className={lbl}>Forex prop risk %</label>
-            <input type="number" step="0.1" className={field} value={form.forexPropRiskPct} onChange={set("forexPropRiskPct")} />
-          </div>
-          <div>
-            <label className={lbl}>Review within (hours)</label>
-            <input type="number" min="1" className={field} value={form.reviewWithinHours} onChange={set("reviewWithinHours")} />
-          </div>
-          <div>
-            <label className={lbl}>Target R:R</label>
-            <input type="number" step="0.5" className={field} value={form.targetRiskReward} onChange={set("targetRiskReward")} />
-          </div>
-          <div>
-            <label className={lbl}>Minimum R:R</label>
-            <input type="number" step="0.5" className={field} value={form.minRiskReward} onChange={set("minRiskReward")} />
-          </div>
-          <div>
-            <label className={lbl}>Breakeven after R</label>
-            <input type="number" step="0.5" className={field} value={form.breakevenAfterR} onChange={set("breakevenAfterR")} />
-          </div>
-          <div>
-            <label className={lbl}>Timezone</label>
-            <input className={field} value={form.timezone} onChange={set("timezone")} placeholder="Asia/Kolkata" />
-          </div>
-          <div className="space-y-2.5 sm:col-span-2 lg:col-span-4">
-            {(
-              [
-                ["allowPartialExits", "Allow partial exits"],
-                ["noRevengeTrading", "No revenge trading"],
-                ["noChasingMissedSetups", "No chasing missed setups"],
-              ] as const
-            ).map(([k, l]) => (
-              <label key={k} className="flex cursor-pointer items-center gap-3 text-sm text-text-secondary">
-                <input type="checkbox" checked={form[k] as boolean} onChange={setBool(k)} className="h-4 w-4 accent-[var(--accent)]" />
-                {l}
-              </label>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Identity */}
       <section>
         <h2 className="micro-label mb-4">Identity — shown on /about</h2>

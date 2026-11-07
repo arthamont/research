@@ -6,7 +6,7 @@ import { TradeForm } from "@/components/dashboard/trade-form";
 export const dynamic = "force-dynamic";
 
 export default async function NewTradePage() {
-  const user = await requireUser();
+  await requireUser();
   const instruments = await db.instrument.findMany({ where: { isActive: true }, orderBy: { symbol: "asc" } });
 
   return (
