@@ -1,5 +1,5 @@
 import { Reveal, RevealText } from "@/components/motion/reveal";
-import { SectionHeading, MicroLabel } from "@/components/ui/primitives";
+import { SectionHeading } from "@/components/ui/primitives";
 
 const principles = [
   { n: "01", title: "Conviction", sub: "Think Independently.", body: "We believe meaningful decisions begin with rigorous research, independent judgment, and the confidence to act on a well-defined process." },
