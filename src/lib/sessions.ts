@@ -18,6 +18,11 @@ export const SESSIONS: SessionDef[] = [
   { id: "INDIA", label: "India (NSE)", tz: "Asia/Kolkata", openMin: 9 * 60 + 15, closeMin: 15 * 60 + 30 },
 ];
 
+/** Minutes since midnight in `tz` for instant `now` — used to convert session hours across zones. */
+export function tzMinutes(now: Date, tz: string): number {
+  return localMinutes(now, tz).minutes;
+}
+
 function localMinutes(now: Date, tz: string): { minutes: number; dayKey: string } {
   const parts = new Intl.DateTimeFormat("en-GB", {
     timeZone: tz,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getSessionStatuses, formatCountdown, type SessionStatus } from "@/lib/sessions";
+import { getSessionStatuses, formatCountdown, tzMinutes, SESSIONS, type SessionStatus } from "@/lib/sessions";
 
 const TZS: string[] =
   typeof Intl.supportedValuesOf === "function" ? Intl.supportedValuesOf("timeZone") : ["Asia/Kolkata", "America/New_York", "UTC"];
@@ -88,12 +88,19 @@ export function SessionMonitor({ initial }: { initial: SessionStatus[] }) {
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {statuses.map((s) => (
+        {statuses.map((s) => {
+          const def = SESSIONS.find((d) => d.id === s.id)!;
+          const curMin = tzMinutes(now, def.tz);
+          const toLocal = (mins: number) => clock(new Date(now.getTime() + (mins - curMin) * 60000), localTz);
+          return (
           <div key={s.id} className="border border-border bg-bg p-3.5">
             <div className="flex items-center justify-between">
               <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-secondary">{s.label}</p>
               <span className={`h-1.5 w-1.5 rounded-full ${s.isOpen ? "bg-long" : "bg-border-strong"}`} aria-hidden />
             </div>
+            <p className="numeric mt-1 font-mono text-[10px] text-text-faint">
+              {toLocal(def.openMin)}–{toLocal(def.closeMin)} {abbr(now, localTz)}
+            </p>
             <p className={`mt-2 font-mono text-[10px] uppercase tracking-wider ${s.isOpen ? "text-long" : "text-text-faint"}`}>
               {s.isOpen ? "Open" : "Closed"}
             </p>
@@ -107,7 +114,8 @@ export function SessionMonitor({ initial }: { initial: SessionStatus[] }) {
             </p>
             <p className="numeric mt-0.5 text-[10px] text-text-faint/70">{s.localTime} local</p>
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
