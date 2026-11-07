@@ -14,6 +14,7 @@ const links = [
   { href: "/outlook", label: "Outlook" },
   { href: "/playbook", label: "Playbook" },
   { href: "/about", label: "About" },
+  { href: "/contact", label: "Contact" },
 ];
 
 export function Nav() {
