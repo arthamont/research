@@ -47,7 +47,7 @@ export function DashboardShell({ children, userEmail }: { children: React.ReactN
                 : "border-l-2 border-transparent text-text-secondary hover:bg-surface hover:text-text"
             )}
           >
-            <span aria-hidden className="w-4 text-center text-xs opacity-60">
+            <span aria-hidden className="w-8 text-center text-2xl leading-none opacity-60">
               {n.icon}
             </span>
             {n.label}
