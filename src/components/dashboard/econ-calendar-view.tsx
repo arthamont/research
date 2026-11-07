@@ -159,9 +159,6 @@ export function EconCalendarView({ rows, noteDate, notes }: { rows: EconRow[]; n
                                   <span className="min-w-0">
                                     <span className="numeric mr-1 text-[9px] text-text-faint">{etTime(r.scheduledAt).replace(" ET", "")}</span>
                                     <span className="text-text-secondary">{r.name}</span>
-                                    {r.actual !== null && (
-                                      <span className="ml-1 font-mono text-[9px] text-long">{r.actual}{r.unit ? ` ${r.unit.split(",")[0].replace(/[^%\w]/g, "")}` : ""}</span>
-                                    )}
                                   </span>
                                 </li>
                               ))}
