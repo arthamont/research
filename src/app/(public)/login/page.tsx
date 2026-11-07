@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { auth } from "@/auth";
+import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { LoginForm } from "./login-form";
 import { Monogram } from "@/components/brand/wordmark";
@@ -13,7 +14,12 @@ export const metadata: Metadata = {
 
 export default async function LoginPage() {
   const session = await auth();
-  if (session?.user) redirect("/dashboard");
+  // Only auto-redirect when the session's user actually exists — a stale JWT
+  // (e.g. from a previous database) would otherwise loop /login ↔ /dashboard.
+  if (session?.user?.id) {
+    const exists = await db.user.findUnique({ where: { id: session.user.id }, select: { id: true } });
+    if (exists) redirect("/dashboard");
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center px-5">
