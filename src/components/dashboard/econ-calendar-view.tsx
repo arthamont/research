@@ -15,9 +15,16 @@ const chip = (active: boolean) =>
 
 const IMPACT_TONE: Record<string, string> = {
   high: "var(--short)",
-  med: "var(--warning)",
+  med: "#e8833a",
   low: "var(--text-faint)",
 };
+
+const IMPACT_LABEL: Record<string, string> = { high: "High", med: "Med", low: "Low" };
+
+function fmtCell(v: string | number | null) {
+  if (v === null || v === undefined || v === "") return "—";
+  return String(v);
+}
 
 export function EconCalendarView({ rows, noteDate, notes }: { rows: EconRow[]; noteDate: string; notes: Record<string, string> }) {
   const [importance, setImportance] = useState<"high" | "med" | null>(null);
@@ -176,6 +183,56 @@ export function EconCalendarView({ rows, noteDate, notes }: { rows: EconRow[]; n
               );
             })}
           </div>
+        </div>
+
+        {/* Releases table — clean list for the viewed month */}
+        <div className="mt-8 overflow-x-auto">
+          <p className="micro-label mb-3">Releases — {monthLabel}</p>
+          <table className="w-full min-w-[720px] text-sm">
+            <thead>
+              <tr className="border-b border-border text-left">
+                {["Date", "Time", "Release", "Period", "Imp", "Previous", "Forecast", "Actual"].map((h) => (
+                  <th key={h} className="micro-label pb-2.5 pr-4 font-normal last:text-right">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {weeks.flatMap((week) =>
+                week.flatMap((day) => {
+                  const releases = byDay.get(day) ?? [];
+                  return releases.map((r, i) => (
+                    <tr key={r.code + r.scheduledAt} className="border-b border-border/50 transition-colors hover:bg-surface">
+                      {i === 0 ? (
+                        <td rowSpan={releases.length} className="numeric py-2.5 pr-4 align-top text-xs text-text-faint">
+                          {new Date(day + "T00:00:00Z").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" })}
+                        </td>
+                      ) : null}
+                      <td className="numeric py-2.5 pr-4 text-xs text-text-secondary">{etTime(r.scheduledAt)}</td>
+                      <td className="py-2.5 pr-4">
+                        <span className="flex items-center gap-2">
+                          <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: IMPACT_TONE[r.importance] }} aria-hidden />
+                          <span className="text-text">{r.name}</span>
+                          <span className="font-mono text-[9px] uppercase text-text-faint">{sourceLabel(r.source)}</span>
+                        </span>
+                      </td>
+                      <td className="py-2.5 pr-4 text-xs text-text-faint">{r.periodLabel ?? "—"}</td>
+                      <td className="py-2.5 pr-4 font-mono text-[10px] uppercase" style={{ color: IMPACT_TONE[r.importance] }}>{IMPACT_LABEL[r.importance]}</td>
+                      <td className="numeric py-2.5 pr-4 text-xs text-text-secondary">{fmtCell(r.previous)}</td>
+                      <td className="numeric py-2.5 pr-4 text-xs text-text-faint">{fmtCell(r.forecast)}</td>
+                      <td className={`numeric py-2.5 pr-0 text-right text-xs ${r.actual !== null ? "text-long" : "text-text-faint"}`}>
+                        {fmtCell(r.actual)}{r.actual !== null && r.unit ? <span className="ml-1 text-[9px] text-text-faint">{r.unit.split(",")[0]}</span> : null}
+                      </td>
+                    </tr>
+                  ));
+                })
+              )}
+            </tbody>
+          </table>
+          {weeks.every((w) => w.every((d) => (byDay.get(d) ?? []).length === 0)) && (
+            <p className="border border-dashed border-border px-8 py-10 text-center text-sm text-text-faint">
+              No releases this month (or outside the feed window).
+            </p>
+          )}
         </div>
 
         {/* Legend + attribution */}

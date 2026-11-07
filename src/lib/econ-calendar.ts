@@ -12,9 +12,9 @@ export interface EconRow {
   scheduledAt: string; // ISO UTC
   date: string; // ET date for calendar grouping
   periodLabel: string | null;
-  previous: number | null;
-  forecast: number | null;
-  actual: number | null;
+  previous: string | null;
+  forecast: string | null;
+  actual: string | null;
   unit: string;
   released: boolean;
   daysUntil: number | null;
@@ -26,9 +26,9 @@ interface XoomarRow {
   importance: "high" | "med" | "low";
   scheduledAt: string;
   periodLabel: string | null;
-  previous: number | null;
-  forecast: number | null;
-  actual: number | null;
+  previous: string | null;
+  forecast: string | null;
+  actual: string | null;
   unit: string;
 }
 
