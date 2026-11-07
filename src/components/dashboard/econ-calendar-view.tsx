@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import type { EconRow } from "@/lib/econ-calendar";
 import { etTime, sourceLabel } from "@/lib/econ-calendar";
-import { usMarketHolidays, monthWeeks, weekHeadline } from "@/lib/holidays";
+import { usMarketHolidays, monthWeeks } from "@/lib/holidays";
 import { DayNoteEditor } from "./day-note";
 import { cn } from "@/lib/utils";
 
@@ -19,12 +19,7 @@ const IMPACT_TONE: Record<string, string> = {
   low: "var(--text-faint)",
 };
 
-const IMPACT_LABEL: Record<string, string> = { high: "High", med: "Med", low: "Low" };
 
-function fmtCell(v: string | number | null) {
-  if (v === null || v === undefined || v === "") return "—";
-  return String(v);
-}
 
 export function EconCalendarView({ rows, noteDate, notes }: { rows: EconRow[]; noteDate: string; notes: Record<string, string> }) {
   const [importance, setImportance] = useState<"high" | "med" | null>(null);
@@ -119,11 +114,10 @@ export function EconCalendarView({ rows, noteDate, notes }: { rows: EconRow[]; n
             </div>
             {weeks.map((week, wi) => {
               const weekReleases = week.flatMap((d) => byDay.get(d) ?? []);
-              const headline = weekHeadline(weekReleases.map((r) => r.name));
               return (
                 <div key={wi} className="grid grid-cols-[90px_repeat(5,1fr)] border-b border-border">
                   <div className="border-r border-border py-3 pr-3">
-                    {headline && <p className="text-xs font-medium text-accent-text">{headline}</p>}
+                    <p className="text-xs font-medium text-text-secondary">Week {wi + 1}</p>
                     <p className="mt-1 font-mono text-[9px] leading-snug text-text-faint">
                       {weekReleases.length ? `${weekReleases.length} release${weekReleases.length === 1 ? "" : "s"}` : "quiet"}
                     </p>
@@ -141,7 +135,8 @@ export function EconCalendarView({ rows, noteDate, notes }: { rows: EconRow[]; n
                         className={cn(
                           "min-h-[110px] border-r border-border p-2 text-left align-top transition-colors last:border-r-0",
                           day ? "hover:bg-surface" : "bg-surface/30",
-                          noteDay === day && "bg-accent-soft"
+                          isToday && "bg-bg-elevated",
+                          noteDay === day && !isToday && "bg-accent-soft"
                         )}
                       >
                         {day && (
@@ -150,7 +145,7 @@ export function EconCalendarView({ rows, noteDate, notes }: { rows: EconRow[]; n
                               <span className={cn("numeric text-sm", isToday ? "font-semibold text-accent" : "text-text")}>
                                 {Number(day.slice(-2))}
                               </span>
-                              {isToday && <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden />}
+                              {isToday && <span className="h-1.5 w-1.5 rounded-full bg-long" aria-hidden />}
                             </div>
                             {holiday && (
                               <p className="mt-1 border border-warning/40 bg-warning/10 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-warning">
@@ -183,56 +178,6 @@ export function EconCalendarView({ rows, noteDate, notes }: { rows: EconRow[]; n
               );
             })}
           </div>
-        </div>
-
-        {/* Releases table — clean list for the viewed month */}
-        <div className="mt-8 overflow-x-auto">
-          <p className="micro-label mb-3">Releases — {monthLabel}</p>
-          <table className="w-full min-w-[720px] text-sm">
-            <thead>
-              <tr className="border-b border-border text-left">
-                {["Date", "Time", "Release", "Period", "Imp", "Previous", "Forecast", "Actual"].map((h) => (
-                  <th key={h} className="micro-label pb-2.5 pr-4 font-normal last:text-right">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {weeks.flatMap((week) =>
-                week.flatMap((day) => {
-                  const releases = byDay.get(day) ?? [];
-                  return releases.map((r, i) => (
-                    <tr key={r.code + r.scheduledAt} className="border-b border-border/50 transition-colors hover:bg-surface">
-                      {i === 0 ? (
-                        <td rowSpan={releases.length} className="numeric py-2.5 pr-4 align-top text-xs text-text-faint">
-                          {new Date(day + "T00:00:00Z").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" })}
-                        </td>
-                      ) : null}
-                      <td className="numeric py-2.5 pr-4 text-xs text-text-secondary">{etTime(r.scheduledAt)}</td>
-                      <td className="py-2.5 pr-4">
-                        <span className="flex items-center gap-2">
-                          <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: IMPACT_TONE[r.importance] }} aria-hidden />
-                          <span className="text-text">{r.name}</span>
-                          <span className="font-mono text-[9px] uppercase text-text-faint">{sourceLabel(r.source)}</span>
-                        </span>
-                      </td>
-                      <td className="py-2.5 pr-4 text-xs text-text-faint">{r.periodLabel ?? "—"}</td>
-                      <td className="py-2.5 pr-4 font-mono text-[10px] uppercase" style={{ color: IMPACT_TONE[r.importance] }}>{IMPACT_LABEL[r.importance]}</td>
-                      <td className="numeric py-2.5 pr-4 text-xs text-text-secondary">{fmtCell(r.previous)}</td>
-                      <td className="numeric py-2.5 pr-4 text-xs text-text-faint">{fmtCell(r.forecast)}</td>
-                      <td className={`numeric py-2.5 pr-0 text-right text-xs ${r.actual !== null ? "text-long" : "text-text-faint"}`}>
-                        {fmtCell(r.actual)}{r.actual !== null && r.unit ? <span className="ml-1 text-[9px] text-text-faint">{r.unit.split(",")[0]}</span> : null}
-                      </td>
-                    </tr>
-                  ));
-                })
-              )}
-            </tbody>
-          </table>
-          {weeks.every((w) => w.every((d) => (byDay.get(d) ?? []).length === 0)) && (
-            <p className="border border-dashed border-border px-8 py-10 text-center text-sm text-text-faint">
-              No releases this month (or outside the feed window).
-            </p>
-          )}
         </div>
 
         {/* Legend + attribution */}
