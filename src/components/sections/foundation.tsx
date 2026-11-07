@@ -1,6 +1,6 @@
-import Link from "next/link";
+
 import { Reveal, RevealText } from "@/components/motion/reveal";
-import { ButtonLink, MicroLabel, SectionHeading } from "@/components/ui/primitives";
+import { ButtonLink, SectionHeading } from "@/components/ui/primitives";
 
 /* ── 02 — Who We Are ─────────────────────────────────────────────────── */
 
