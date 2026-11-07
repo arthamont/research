@@ -1,0 +1,1 @@
+ALTER TABLE "UserSettings" ADD COLUMN "heroJson" JSONB NOT NULL DEFAULT '{}';

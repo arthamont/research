@@ -171,6 +171,7 @@ model UserSettings {
   riskApproach         String?  @db.Text
   longTermObjectives   String?  @db.Text
   socialLinks          Json     @default("{}") // { x, instagram, youtube, ... }
+  heroJson             Json     @default("{}") // editable homepage hero copy
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

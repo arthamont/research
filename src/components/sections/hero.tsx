@@ -6,6 +6,28 @@ import Link from "next/link";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
+export interface HeroContent {
+  eyebrow?: string;
+  line1?: string;
+  line2?: string;
+  lede?: string;
+  cta1Label?: string;
+  cta2Label?: string;
+  strip?: string;
+  note?: string;
+}
+
+const DEFAULTS: Required<HeroContent> = {
+  eyebrow: "Conviction. Discipline. Longevity.",
+  line1: "Built on principle.",
+  line2: "Defined by time.",
+  lede: "An independent pursuit of disciplined trading, rigorous market research, and long-term capital stewardship.",
+  cta1Label: "Explore our philosophy",
+  cta2Label: "Discover our research",
+  strip: "Futures / Global markets / Research",
+  note: "An independent trading and research initiative with a long-term institutional vision.",
+};
+
 function Line({ delay, d }: { delay: number; d: string }) {
   return (
     <motion.path
@@ -20,7 +42,8 @@ function Line({ delay, d }: { delay: number; d: string }) {
   );
 }
 
-export function Hero() {
+export function Hero({ content }: { content?: HeroContent }) {
+  const c = { ...DEFAULTS, ...content };
   const reduce = useReducedMotion();
   const ref = useRef<HTMLElement>(null);
 
@@ -95,7 +118,7 @@ export function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.2, ease: EASE }}
         >
-          Conviction. Discipline. Longevity.
+          {c.eyebrow}
         </motion.p>
 
         <div className="mt-8 overflow-hidden">
@@ -128,9 +151,9 @@ export function Hero() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 1, ease: EASE }}
             >
-              Built on principle.
+              {c.line1}
               <br />
-              <span className="text-text-secondary">Defined by time.</span>
+              <span className="text-text-secondary">{c.line2}</span>
             </motion.p>
             <motion.p
               className="mt-6 max-w-md text-sm leading-relaxed text-text-secondary sm:text-base"
@@ -138,8 +161,7 @@ export function Hero() {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.8, delay: 1.3 }}
             >
-              An independent pursuit of disciplined trading, rigorous market research, and long-term capital
-              stewardship.
+              {c.lede}
             </motion.p>
           </div>
 
@@ -154,19 +176,17 @@ export function Hero() {
                 href="/about"
                 className="border border-accent bg-accent px-6 py-3 font-mono text-xs uppercase tracking-[0.16em] text-bg transition-colors hover:bg-accent-text"
               >
-                Explore our philosophy
+                {c.cta1Label}
               </Link>
               <Link
                 href="/outlook"
                 className="border border-border-strong px-6 py-3 font-mono text-xs uppercase tracking-[0.16em] text-text transition-colors hover:border-accent hover:text-accent-text"
               >
-                Discover our research
+                {c.cta2Label}
               </Link>
             </div>
-            <p className="micro-label">Futures / Global markets / Research</p>
-            <p className="text-[11px] italic leading-relaxed text-text-faint">
-              An independent trading and research initiative with a long-term institutional vision.
-            </p>
+            <p className="micro-label">{c.strip}</p>
+            <p className="text-[11px] italic leading-relaxed text-text-faint">{c.note}</p>
           </motion.div>
         </div>
       </div>

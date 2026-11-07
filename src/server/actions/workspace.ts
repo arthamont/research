@@ -27,6 +27,18 @@ const settingsSchema = z.object({
   longTermObjectives: z.string().optional().nullable(),
   tradingInterests: z.string().optional().nullable(), // comma-separated
   socialLinks: z.string().optional().nullable(), // JSON or "key:url" lines
+  hero: z
+    .object({
+      eyebrow: z.string().optional(),
+      line1: z.string().optional(),
+      line2: z.string().optional(),
+      lede: z.string().optional(),
+      cta1Label: z.string().optional(),
+      cta2Label: z.string().optional(),
+      strip: z.string().optional(),
+      note: z.string().optional(),
+    })
+    .optional(),
 });
 
 export async function updateSettings(data: unknown) {
@@ -47,21 +59,25 @@ export async function updateSettings(data: unknown) {
     }
   }
 
+  const { hero, ...rest } = d;
   await db.userSettings.upsert({
     where: { userId: user.id },
     update: {
-      ...d,
+      ...rest,
+      heroJson: hero ?? {},
       tradingInterests: d.tradingInterests ? d.tradingInterests.split(",").map((s) => s.trim()).filter(Boolean) : [],
       socialLinks: social,
     },
     create: {
       userId: user.id,
-      ...d,
+      ...rest,
+      heroJson: hero ?? {},
       tradingInterests: d.tradingInterests ? d.tradingInterests.split(",").map((s) => s.trim()).filter(Boolean) : [],
       socialLinks: social,
     },
   });
   bustWorkspaceCache();
+  revalidatePath("/");
   revalidatePath("/dashboard/settings");
   revalidatePath("/about");
   return {};

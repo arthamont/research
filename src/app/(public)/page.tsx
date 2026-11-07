@@ -9,12 +9,16 @@ import { TerminalSection } from "@/components/sections/terminal";
 import { AboutSection, ClosingSection } from "@/components/sections/closing";
 import { NxLoader } from "@/components/ui/primitives";
 
+import { db } from "@/lib/db";
+
 export const revalidate = 300;
 
-export default function HomePage() {
+export default async function HomePage() {
+  const settings = await db.userSettings.findFirst();
+  const heroContent = (settings?.heroJson as Record<string, string> | null) ?? undefined;
   return (
     <>
-      <Hero />
+      <Hero content={heroContent} />
       <MarketsSection />
       <PhilosophySection />
       <ProcessSection />

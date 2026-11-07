@@ -7,6 +7,17 @@ import { Button } from "@/components/ui/primitives";
 import { field, lbl, useActionForm, FormError, EditorTextarea } from "./generic-forms";
 import { cn } from "@/lib/utils";
 
+interface HeroJson {
+  eyebrow?: string;
+  line1?: string;
+  line2?: string;
+  lede?: string;
+  cta1Label?: string;
+  cta2Label?: string;
+  strip?: string;
+  note?: string;
+}
+
 export function SettingsForm({ settings }: { settings: UserSettings | null }) {
   const { error, pending, run } = useActionForm();
   const [saved, setSaved] = useState(false);
@@ -29,6 +40,16 @@ export function SettingsForm({ settings }: { settings: UserSettings | null }) {
     longTermObjectives: settings?.longTermObjectives ?? "",
     tradingInterests: (settings?.tradingInterests ?? []).join(", "),
     socialLinks: social,
+    hero: {
+      eyebrow: (settings?.heroJson as HeroJson)?.eyebrow ?? "Conviction. Discipline. Longevity.",
+      line1: (settings?.heroJson as HeroJson)?.line1 ?? "Built on principle.",
+      line2: (settings?.heroJson as HeroJson)?.line2 ?? "Defined by time.",
+      lede: (settings?.heroJson as HeroJson)?.lede ?? "An independent pursuit of disciplined trading, rigorous market research, and long-term capital stewardship.",
+      cta1Label: (settings?.heroJson as HeroJson)?.cta1Label ?? "Explore our philosophy",
+      cta2Label: (settings?.heroJson as HeroJson)?.cta2Label ?? "Discover our research",
+      strip: (settings?.heroJson as HeroJson)?.strip ?? "Futures / Global markets / Research",
+      note: (settings?.heroJson as HeroJson)?.note ?? "An independent trading and research initiative with a long-term institutional vision.",
+    },
   });
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
@@ -38,6 +59,47 @@ export function SettingsForm({ settings }: { settings: UserSettings | null }) {
 
   return (
     <div className="space-y-10">
+      {/* Homepage hero */}
+      <section>
+        <h2 className="micro-label mb-4">Homepage hero — editable copy</h2>
+        <div className="space-y-4 border border-border bg-bg-elevated p-5">
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div>
+              <label className={lbl}>Tagline (eyebrow)</label>
+              <input className={field} value={form.hero.eyebrow} onChange={(e) => setForm((f) => ({ ...f, hero: { ...f.hero, eyebrow: e.target.value } }))} />
+            </div>
+            <div>
+              <label className={lbl}>Strip text</label>
+              <input className={field} value={form.hero.strip} onChange={(e) => setForm((f) => ({ ...f, hero: { ...f.hero, strip: e.target.value } }))} />
+            </div>
+            <div>
+              <label className={lbl}>Headline — line 1</label>
+              <input className={field} value={form.hero.line1} onChange={(e) => setForm((f) => ({ ...f, hero: { ...f.hero, line1: e.target.value } }))} />
+            </div>
+            <div>
+              <label className={lbl}>Headline — line 2</label>
+              <input className={field} value={form.hero.line2} onChange={(e) => setForm((f) => ({ ...f, hero: { ...f.hero, line2: e.target.value } }))} />
+            </div>
+            <div>
+              <label className={lbl}>Button 1 label</label>
+              <input className={field} value={form.hero.cta1Label} onChange={(e) => setForm((f) => ({ ...f, hero: { ...f.hero, cta1Label: e.target.value } }))} />
+            </div>
+            <div>
+              <label className={lbl}>Button 2 label</label>
+              <input className={field} value={form.hero.cta2Label} onChange={(e) => setForm((f) => ({ ...f, hero: { ...f.hero, cta2Label: e.target.value } }))} />
+            </div>
+          </div>
+          <div>
+            <label className={lbl}>Lead paragraph</label>
+            <EditorTextarea rows={3} value={form.hero.lede} onChange={(e) => setForm((f) => ({ ...f, hero: { ...f.hero, lede: e.target.value } }))} />
+          </div>
+          <div>
+            <label className={lbl}>Italic note (small print)</label>
+            <EditorTextarea rows={2} value={form.hero.note} onChange={(e) => setForm((f) => ({ ...f, hero: { ...f.hero, note: e.target.value } }))} />
+          </div>
+        </div>
+      </section>
+
       {/* Identity */}
       <section>
         <h2 className="micro-label mb-4">Identity — shown on /about</h2>
