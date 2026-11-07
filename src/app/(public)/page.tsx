@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { Hero } from "@/components/sections/hero";
-import { FoundationSection, FocusSection, VisionSection, FounderSection } from "@/components/sections/foundation";
+import { FoundationSection, FocusSection } from "@/components/sections/foundation";
 import { MarketsSection } from "@/components/sections/markets";
 import { PhilosophySection } from "@/components/sections/philosophy";
 import { ProcessSection } from "@/components/sections/process";
@@ -25,8 +25,6 @@ export default async function HomePage() {
       <Suspense fallback={<div className="flex justify-center py-24"><NxLoader /></div>}>
         <ResearchSection />
       </Suspense>
-      <VisionSection />
-      <FounderSection />
       <ClosingSection />
     </>
   );
