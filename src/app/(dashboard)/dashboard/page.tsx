@@ -32,7 +32,7 @@ export default async function DashboardPage() {
         take: 5,
         include: { instrument: true, setup: true },
       }),
-      fetchEconCalendar({ release_state: "upcoming", from_date: todayStr, till_date: in14Str }),
+      fetchEconCalendar({ from: todayStr, to: in14Str }),
       db.checklistEntry.findMany({
         where: { userId: user.id, date: today },
         include: { template: true },
@@ -197,19 +197,23 @@ export default async function DashboardPage() {
           action={<Link href="/dashboard/economic" className="font-mono text-[10px] uppercase text-text-faint hover:text-accent-text">calendar</Link>}
         >
           {events.length === 0 ? (
-            <p className="text-sm text-text-faint">
-              {process.env.BQ_API_KEY ? "Nothing scheduled in the next 14 days." : "Set BQ_API_KEY for the release feed."}
-            </p>
+            <p className="text-sm text-text-faint">Nothing scheduled in the next 14 days.</p>
           ) : (
             <ul className="space-y-2">
-              {events.slice(0, 4).map((e) => (
-                <li key={e.code} className="flex items-baseline justify-between gap-3 text-sm">
-                  <span className="truncate text-text-secondary">{e.name}</span>
-                  <span className="shrink-0 font-mono text-[10px] text-text-faint">
-                    {e.days_until_next !== null ? `${e.days_until_next}d` : e.next_release}
-                  </span>
-                </li>
-              ))}
+              {events
+                .filter((e) => !e.released && e.importance !== "low")
+                .slice(0, 4)
+                .map((e) => (
+                  <li key={e.code} className="flex items-baseline justify-between gap-3 text-sm">
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${e.importance === "high" ? "bg-short" : "bg-warning"}`} aria-hidden />
+                      <span className="truncate text-text-secondary">{e.name}</span>
+                    </span>
+                    <span className="shrink-0 font-mono text-[10px] text-text-faint">
+                      {e.daysUntil !== null ? (e.daysUntil === 0 ? "today" : `${e.daysUntil}d`) : e.date}
+                    </span>
+                  </li>
+                ))}
             </ul>
           )}
         </Widget>

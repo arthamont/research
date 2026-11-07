@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { BqCalendarRow } from "@/lib/econ-calendar";
+import type { EconRow } from "@/lib/econ-calendar";
+import { etTime, sourceLabel } from "@/lib/econ-calendar";
 import { usMarketHolidays, monthWeeks, weekHeadline } from "@/lib/holidays";
 import { DayNoteEditor } from "./day-note";
 import { cn } from "@/lib/utils";
@@ -12,47 +13,42 @@ const chip = (active: boolean) =>
     active ? "border-accent text-accent-text" : "border-border text-text-secondary hover:border-border-strong"
   );
 
-/** Stable category → color mapping (real data, no invented impact levels). */
-const CATEGORY_TONES: Record<string, string> = {
-  Inflation: "var(--short)",
-  Employment: "var(--accent)",
-  Rates: "var(--info)",
-  Growth: "var(--long)",
-  Credit: "var(--warning)",
-  Housing: "var(--long)",
-  Trade: "var(--info)",
-  Business: "var(--text-secondary)",
-  Sentiment: "var(--warning)",
+const IMPACT_TONE: Record<string, string> = {
+  high: "var(--short)",
+  med: "var(--warning)",
+  low: "var(--text-faint)",
 };
-const tone = (c: string) => CATEGORY_TONES[c] ?? "var(--text-faint)";
 
-
-export function EconCalendarView({ rows, noteDate, notes }: { rows: BqCalendarRow[]; noteDate: string; notes: Record<string, string> }) {
-  const [category, setCategory] = useState<string | null>(null);
+export function EconCalendarView({ rows, noteDate, notes }: { rows: EconRow[]; noteDate: string; notes: Record<string, string> }) {
+  const [importance, setImportance] = useState<"high" | "med" | null>(null);
+  const [source, setSource] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [noteDay, setNoteDay] = useState(noteDate);
 
   const [y0, m0] = noteDate.split("-").map(Number);
   const [view, setView] = useState({ year: y0, month: m0 - 1 });
 
-  const categories = useMemo(() => [...new Set(rows.map((r) => r.category))].sort(), [rows]);
+  const sources = useMemo(() => [...new Set(rows.map((r) => r.source))].sort(), [rows]);
   const holidays = useMemo(() => usMarketHolidays(view.year), [view.year]);
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return rows.filter((r) => {
-      if (category && r.category !== category) return false;
-      if (needle && !`${r.name} ${r.code}`.toLowerCase().includes(needle)) return false;
+      if (importance && r.importance !== importance) return false;
+      if (!importance && r.importance === "low") return false; // default: high + medium only
+      if (source && r.source !== source) return false;
+      if (needle && !r.name.toLowerCase().includes(needle)) return false;
       return true;
     });
-  }, [rows, category, q]);
+  }, [rows, importance, source, q]);
 
   const byDay = useMemo(() => {
-    const map = new Map<string, BqCalendarRow[]>();
+    const map = new Map<string, EconRow[]>();
     for (const r of filtered) {
-      if (!r.next_release) continue;
-      map.set(r.next_release, [...(map.get(r.next_release) ?? []), r]);
+      map.set(r.date, [...(map.get(r.date) ?? []), r]);
     }
+    // chronological within the day
+    for (const list of map.values()) list.sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
     return map;
   }, [filtered]);
 
@@ -86,14 +82,21 @@ export function EconCalendarView({ rows, noteDate, notes }: { rows: BqCalendarRo
             type="search"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search name or code…"
+            placeholder="Search releases…"
             className="w-52 border border-border bg-surface px-3 py-1.5 text-xs text-text placeholder:text-text-faint focus:border-accent focus:outline-none"
           />
         </div>
         <div className="mb-6 flex flex-wrap gap-1.5">
-          {categories.map((c) => (
-            <button key={c} onClick={() => setCategory(category === c ? null : c)} className={chip(category === c)}>
-              {c}
+          {(["high", "med"] as const).map((i) => (
+            <button key={i} onClick={() => setImportance(importance === i ? null : i)} className={chip(importance === i)}>
+              <span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full" style={{ background: IMPACT_TONE[i] }} aria-hidden />
+              {i === "med" ? "medium" : i}
+            </button>
+          ))}
+          <span className="mx-1 w-px self-stretch bg-border" aria-hidden />
+          {sources.map((s) => (
+            <button key={s} onClick={() => setSource(source === s ? null : s)} className={chip(source === s)}>
+              {sourceLabel(s)}
             </button>
           ))}
         </div>
@@ -149,9 +152,15 @@ export function EconCalendarView({ rows, noteDate, notes }: { rows: BqCalendarRo
                             )}
                             <ul className="mt-1.5 space-y-1">
                               {releases.map((r) => (
-                                <li key={r.code} className="flex items-start gap-1.5 text-[11px] leading-tight">
-                                  <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: tone(r.category) }} aria-hidden />
-                                  <span className="text-text-secondary">{r.name}</span>
+                                <li key={r.code + r.scheduledAt} className="flex items-start gap-1.5 text-[11px] leading-tight">
+                                  <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: IMPACT_TONE[r.importance] }} aria-hidden />
+                                  <span className="min-w-0">
+                                    <span className="numeric mr-1 text-[9px] text-text-faint">{etTime(r.scheduledAt).replace(" ET", "")}</span>
+                                    <span className="text-text-secondary">{r.name}</span>
+                                    {r.actual !== null && (
+                                      <span className="ml-1 font-mono text-[9px] text-long">{r.actual}{r.unit ? ` ${r.unit.split(",")[0].replace(/[^%\w]/g, "")}` : ""}</span>
+                                    )}
+                                  </span>
                                 </li>
                               ))}
                             </ul>
@@ -169,15 +178,18 @@ export function EconCalendarView({ rows, noteDate, notes }: { rows: BqCalendarRo
           </div>
         </div>
 
-        {/* Legend */}
-        <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1.5 border-t border-border pt-3">
-          {categories.map((c) => (
-            <span key={c} className="flex items-center gap-1.5 font-mono text-[10px] text-text-faint">
-              <span className="h-1.5 w-1.5 rounded-full" style={{ background: tone(c) }} aria-hidden />
-              {c}
+        {/* Legend + attribution */}
+        <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1.5 border-t border-border pt-3">
+          {(["high", "med", "low"] as const).map((i) => (
+            <span key={i} className="flex items-center gap-1.5 font-mono text-[10px] text-text-faint">
+              <span className="h-1.5 w-1.5 rounded-full" style={{ background: IMPACT_TONE[i] }} aria-hidden />
+              {i === "med" ? "Medium impact" : `${i[0].toUpperCase()}${i.slice(1)} impact`}
             </span>
           ))}
-          <span className="ml-auto text-[10px] text-text-faint">Dates only — no times or impact ratings in the feed. Holiday = NYSE closed.</span>
+          <span className="font-mono text-[10px] text-text-faint">Holiday = NYSE closed · Times ET</span>
+          <a href="https://xoomar.com" target="_blank" rel="noopener noreferrer" className="ml-auto font-mono text-[10px] text-text-faint underline-offset-4 hover:text-accent-text hover:underline">
+            Data: XOOMAR
+          </a>
         </div>
       </div>
 

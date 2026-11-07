@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/require-user";
-import { fetchEconCalendar, hasEconKey } from "@/lib/econ-calendar";
+import { fetchEconCalendar, toISODate } from "@/lib/econ-calendar";
 import { PageHeader } from "@/components/dashboard/widgets";
 import { EmptyState } from "@/components/ui/primitives";
 import { EconCalendarView } from "@/components/dashboard/econ-calendar-view";
@@ -13,9 +13,13 @@ export default async function EconomicPage() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const todayStr = today.toISOString().slice(0, 10);
+  const from = new Date(today);
+  from.setUTCDate(from.getUTCDate() - 45);
+  const to = new Date(today);
+  to.setUTCDate(to.getUTCDate() + 90);
 
   const [rows, notes] = await Promise.all([
-    fetchEconCalendar(),
+    fetchEconCalendar({ from: toISODate(from), to: toISODate(to) }),
     db.marketNote.findMany({
       where: { userId: user.id },
       orderBy: { date: "desc" },
@@ -29,13 +33,11 @@ export default async function EconomicPage() {
   return (
     <>
       <PageHeader title="Economic calendar" />
-      {hasEconKey() ? (
-        <EconCalendarView rows={rows} noteDate={todayStr} notes={noteMap} />
-      ) : (
+      {rows.length === 0 ? (
         <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
           <EmptyState
-            title="No API key configured"
-            hint="Add BQ_API_KEY to .env — free key at businessquant.com — then restart the dev server. The day-note editor still works."
+            title="Calendar unavailable"
+            hint="The XOOMAR feed returned no data — check connectivity or try again later. Day notes still work."
           />
           <aside className="h-fit border border-border bg-bg-elevated p-4">
             <p className="micro-label mb-1">Day note — {todayStr}</p>
@@ -43,6 +45,8 @@ export default async function EconomicPage() {
             <DayNoteEditor date={todayStr} initial={noteMap[todayStr] ?? ""} />
           </aside>
         </div>
+      ) : (
+        <EconCalendarView rows={rows} noteDate={todayStr} notes={noteMap} />
       )}
     </>
   );

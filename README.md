@@ -35,7 +35,7 @@ npm run dev                 # http://localhost:3000
 | `OWNER_EMAIL` | **The only email allowed to sign in** (Google + credentials) |
 | `OWNER_PASSWORD` | Seed-only: initial credentials password |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth (optional) |
-| `BQ_API_KEY` | BusinessQuant economic calendar feed (optional, free key at businessquant.com) |
+| `XOOMAR economic calendar is keyless — no env var needed.
 
 ### Google sign-in (optional)
 

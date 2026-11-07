@@ -1,68 +1,101 @@
 /**
- * BusinessQuant Economic Calendar — server-side only.
- * Free API: https://businessquant.com — set BQ_API_KEY in .env.
- * Never import this file from client components (the key must stay server-side).
+ * XOOMAR Economic Calendar — server-side only.
+ * Free JSON API, no key required (10 req/min/IP; we cache 1h anyway).
+ * https://xoomar.com/markets/api/calendar — attribution "Data: XOOMAR" required.
  */
 
-export interface BqCalendarRow {
-  indicator_id: number;
-  code: string;
-  name: string;
-  category: string;
-  direction: string;
-  freq: string;
-  freq_long: string;
-  seasonal_adj: string;
-  display_unit: string;
-  decimals: number;
-  last_release: string | null;
-  next_release: string | null;
-  days_until_next: number | null;
-  release_state: "upcoming" | "released" | string;
-  latest_date: string | null;
-  latest_value: number | null;
-  prior_value: number | null;
-  change_abs: number | null;
-  change_pct: number | null;
+export interface EconRow {
+  code: string; // source + eventName slug — stable key
+  name: string; // eventName
+  source: string; // bls, fed, bea, census, eia, …
+  importance: "high" | "med" | "low";
+  scheduledAt: string; // ISO UTC
+  date: string; // ET date for calendar grouping
+  periodLabel: string | null;
+  previous: number | null;
+  forecast: number | null;
+  actual: number | null;
+  unit: string;
+  released: boolean;
+  daysUntil: number | null;
 }
 
-interface BqCalendarResponse {
-  total_indicators: number;
-  data: BqCalendarRow[];
+interface XoomarRow {
+  source: string;
+  eventName: string;
+  importance: "high" | "med" | "low";
+  scheduledAt: string;
+  periodLabel: string | null;
+  previous: number | null;
+  forecast: number | null;
+  actual: number | null;
+  unit: string;
 }
 
-const ENDPOINT = "https://data.businessquant.com/calendar/economic";
+const ENDPOINT = "https://xoomar.com/api/markets/calendar";
+
+const SOURCE_LABELS: Record<string, string> = {
+  bls: "BLS",
+  fed: "FED",
+  bea: "BEA",
+  census: "Census",
+  eia: "EIA",
+  treasury: "Treasury",
+  usda: "USDA",
+  ism: "ISM",
+  umich: "UoM",
+};
+
+export function sourceLabel(s: string) {
+  return SOURCE_LABELS[s] ?? s.toUpperCase();
+}
+
+function etDate(iso: string) {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(iso));
+}
+
+export function etTime(iso: string) {
+  return new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit", hour12: true }).format(new Date(iso)) + " ET";
+}
 
 export interface EconCalendarParams {
-  category?: string;
-  release_state?: "upcoming" | "released";
-  code?: string;
-  from_date?: string; // YYYY-MM-DD — must be paired with till_date
-  till_date?: string;
+  from?: string; // YYYY-MM-DD
+  to?: string;
+  importance?: "high" | "med" | "low";
 }
 
-export function hasEconKey() {
-  return !!process.env.BQ_API_KEY;
-}
-
-export async function fetchEconCalendar(params: EconCalendarParams = {}): Promise<BqCalendarRow[]> {
-  const key = process.env.BQ_API_KEY;
-  if (!key) return [];
-
-  const qs = new URLSearchParams({ api_key: key });
-  if (params.category) qs.set("category", params.category);
-  if (params.release_state) qs.set("release_state", params.release_state);
-  if (params.code) qs.set("code", params.code);
-  if (params.from_date && params.till_date) {
-    qs.set("from_date", params.from_date);
-    qs.set("till_date", params.till_date);
-  }
+/** Fetch + normalize. `importance` is a single-value param upstream; filter client-side for multi. */
+export async function fetchEconCalendar(params: EconCalendarParams = {}): Promise<EconRow[]> {
+  const qs = new URLSearchParams();
+  if (params.from) qs.set("from", params.from);
+  if (params.to) qs.set("to", params.to);
+  if (params.importance) qs.set("importance", params.importance);
 
   try {
     const res = await fetch(`${ENDPOINT}?${qs}`, { next: { revalidate: 3600 } });
     if (!res.ok) return [];
-    const json = (await res.json()) as BqCalendarResponse;
-    return Array.isArray(json.data) ? json.data : [];
+    const json = (await res.json()) as { data?: XoomarRow[] };
+    const rows = Array.isArray(json.data) ? json.data : [];
+    const today = new Date().toISOString().slice(0, 10);
+    return rows.map((r) => {
+      const date = etDate(r.scheduledAt);
+      const diff = Math.round((new Date(date + "T00:00:00Z").getTime() - new Date(today + "T00:00:00Z").getTime()) / 86400000);
+      return {
+        code: `${r.source}:${r.eventName}`,
+        name: r.eventName,
+        source: r.source,
+        importance: r.importance,
+        scheduledAt: r.scheduledAt,
+        date,
+        periodLabel: r.periodLabel,
+        previous: r.previous,
+        forecast: r.forecast,
+        actual: r.actual,
+        unit: r.unit,
+        released: r.actual !== null,
+        daysUntil: diff,
+      };
+    });
   } catch {
     return [];
   }
