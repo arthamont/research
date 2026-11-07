@@ -4,6 +4,8 @@ import { Markdown } from "@/components/markdown";
 import { MicroLabel, Tag, EmptyState } from "@/components/ui/primitives";
 import { Reveal, RevealText } from "@/components/motion/reveal";
 
+export const revalidate = 300;
+
 export const metadata: Metadata = {
   title: "Playbook",
   description: "The documented trading methodology — frameworks, models, and rules behind every NAYXOR trade.",

@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 import { MicroLabel } from "@/components/ui/primitives";
 import { Reveal, RevealText } from "@/components/motion/reveal";
 
+export const revalidate = 300;
+
 export const metadata: Metadata = {
   title: "About",
   description: "The person behind NAYXOR — an independent trader documenting the pursuit of better decisions.",

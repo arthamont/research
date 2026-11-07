@@ -9,6 +9,8 @@ import { TerminalSection } from "@/components/sections/terminal";
 import { AboutSection, ClosingSection } from "@/components/sections/closing";
 import { NxLoader } from "@/components/ui/primitives";
 
+export const revalidate = 300;
+
 export default function HomePage() {
   return (
     <>

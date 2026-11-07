@@ -6,6 +6,8 @@ import { Reveal, RevealText } from "@/components/motion/reveal";
 import { formatDate } from "@/lib/utils";
 import type { Market } from "@prisma/client";
 
+export const revalidate = 300;
+
 export const metadata: Metadata = {
   title: "Outlook",
   description: "Market research and weekly outlooks across futures, forex, and Indian markets.",

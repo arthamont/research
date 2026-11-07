@@ -6,6 +6,8 @@ import { Markdown } from "@/components/markdown";
 import { MicroLabel, Tag } from "@/components/ui/primitives";
 import { formatDate, formatR, formatNumber } from "@/lib/utils";
 
+export const revalidate = 300;
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const c = await db.caseStudy.findUnique({ where: { slug } });

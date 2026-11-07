@@ -6,6 +6,8 @@ import { Reveal, RevealText } from "@/components/motion/reveal";
 import { formatDate, formatR } from "@/lib/utils";
 import type { Market } from "@prisma/client";
 
+export const revalidate = 300;
+
 export const metadata: Metadata = {
   title: "Journal",
   description: "Public trade case studies — the context, the decision, the execution, and the lesson.",
