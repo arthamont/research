@@ -24,8 +24,13 @@ const phases = [
 
 const frameworks = ["Quarterly Theory", "Power of Three", "Market structure", "Fair Value Gaps", "Order Blocks", "Liquidity", "Session profiles", "SMT divergence", "HTF bias"];
 
+let stepCounter = 0;
+const numberedPhases = phases.map((phase) => ({
+  ...phase,
+  steps: phase.steps.map((s) => ({ ...s, n: String(++stepCounter).padStart(2, "0") })),
+}));
+
 export function ProcessSection() {
-  let stepNo = 0;
   return (
     <section className="border-t border-border">
       <div className="mx-auto max-w-7xl px-5 py-24 sm:px-8 lg:py-36">
@@ -72,7 +77,7 @@ export function ProcessSection() {
 
           {/* phased spine */}
           <div>
-            {phases.map((phase) => (
+            {numberedPhases.map((phase) => (
               <div key={phase.label} className="mb-14 last:mb-0">
                 <Reveal>
                   <div className="mb-2 flex items-center gap-4">
@@ -84,13 +89,11 @@ export function ProcessSection() {
                   {/* spine */}
                   <span aria-hidden className="absolute bottom-5 left-[13px] top-5 w-px bg-border" />
                   {phase.steps.map((s, i) => {
-                    stepNo += 1;
-                    const n = String(stepNo).padStart(2, "0");
                     return (
                       <Reveal key={s.title} delay={i * 0.06}>
                         <li className="group relative flex gap-6 py-5 pl-0 sm:gap-8">
                           <span className="relative z-10 mt-1 flex h-7 w-7 shrink-0 items-center justify-center border border-border bg-bg font-mono text-[10px] text-text-faint transition-colors duration-300 group-hover:border-accent group-hover:text-accent" aria-hidden>
-                            {n}
+                            {s.n}
                           </span>
                           <div className="min-w-0 flex-1">
                             <h3 className="text-xl font-semibold tracking-tight transition-colors duration-300 group-hover:text-accent-text sm:text-2xl">

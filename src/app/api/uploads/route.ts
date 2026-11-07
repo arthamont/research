@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { supabaseAdmin, SCREENSHOT_BUCKET } from "@/lib/supabase";
 import { mkdir, writeFile, readFile } from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";
@@ -57,23 +58,41 @@ export async function POST(req: NextRequest) {
   if (!magicOk(buf, mime)) return NextResponse.json({ error: "File content does not match type" }, { status: 415 });
 
   const name = `${crypto.randomBytes(8).toString("hex")}.${ext}`;
-  const rel = `${tradeId}/${name}`;
-  await mkdir(path.join(/*turbopackIgnore: true*/ UPLOAD_ROOT, tradeId), { recursive: true });
-  await writeFile(path.join(/*turbopackIgnore: true*/ UPLOAD_ROOT, rel), buf);
+  const key = `${tradeId}/${name}`;
+
+  const sb = supabaseAdmin();
+  if (sb) {
+    const { error } = await sb.storage.from(SCREENSHOT_BUCKET).upload(key, buf, {
+      contentType: mime,
+      upsert: false,
+    });
+    if (error) return NextResponse.json({ error: `Storage upload failed: ${error.message}` }, { status: 502 });
+  } else {
+    await mkdir(path.join(/*turbopackIgnore: true*/ UPLOAD_ROOT, tradeId), { recursive: true });
+    await writeFile(path.join(/*turbopackIgnore: true*/ UPLOAD_ROOT, key), buf);
+  }
 
   const shot = await db.tradeScreenshot.create({
-    data: { tradeId, kind: kind as "BEFORE" | "AFTER" | "CONTEXT" | "OTHER", filePath: rel.replace(/\\/g, "/") },
+    data: { tradeId, kind: kind as "BEFORE" | "AFTER" | "CONTEXT" | "OTHER", filePath: key },
   });
   return NextResponse.json({ id: shot.id, url: `/api/uploads?p=${encodeURIComponent(shot.filePath)}` });
 }
 
-/** GET /api/uploads?p=<relpath> — authenticated screenshot serving. */
+/** GET /api/uploads?p=<key> — authenticated serving; redirects to a signed URL when Supabase is configured. */
 export async function GET(req: NextRequest) {
   if (!(await authorized())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const rel = req.nextUrl.searchParams.get("p");
   if (!rel || rel.includes("..") || rel.startsWith("/") || rel.startsWith("\\")) {
     return NextResponse.json({ error: "Invalid path" }, { status: 400 });
   }
+
+  const sb = supabaseAdmin();
+  if (sb) {
+    const { data, error } = await sb.storage.from(SCREENSHOT_BUCKET).createSignedUrl(rel, 3600);
+    if (error || !data?.signedUrl) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return NextResponse.redirect(data.signedUrl, 302);
+  }
+
   const abs = path.join(UPLOAD_ROOT, rel);
   if (!abs.startsWith(UPLOAD_ROOT)) return NextResponse.json({ error: "Invalid path" }, { status: 400 });
   try {
