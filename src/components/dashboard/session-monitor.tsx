@@ -37,6 +37,12 @@ function tzLabel(now: Date, tz: string): string {
   return off ? `${city} (${off})` : city;
 }
 
+/** Offset in minutes, for sorting negative → positive. */
+function tzOffsetMin(now: Date, tz: string): number {
+  const m = /GMT([+-])(\d+)(?::(\d+))?/.exec(tzOffset(now, tz));
+  return m ? (m[1] === "-" ? -1 : 1) * (parseInt(m[2], 10) * 60 + parseInt(m[3] ?? "0", 10)) : 0;
+}
+
 export function SessionMonitor({ initial }: { initial: SessionStatus[] }) {
   const [statuses, setStatuses] = useState(initial);
   const [now, setNow] = useState(() => new Date());
@@ -75,7 +81,7 @@ export function SessionMonitor({ initial }: { initial: SessionStatus[] }) {
           ))}
         </select>
         <select value={localTz} onChange={(e) => setLocalTz(e.target.value)} className={`${sel} max-w-52`} aria-label="Local timezone">
-          {[...TZS].sort((a, b) => tzLabel(now, a).localeCompare(tzLabel(now, b))).map((tz) => (
+          {[...TZS].sort((a, b) => tzOffsetMin(now, a) - tzOffsetMin(now, b) || tzLabel(now, a).localeCompare(tzLabel(now, b))).map((tz) => (
             <option key={tz} value={tz}>{tzLabel(now, tz)}</option>
           ))}
         </select>
