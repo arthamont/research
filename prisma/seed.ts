@@ -1,5 +1,5 @@
 /**
- * NAYXOR seed — owner account, instruments with real contract specs,
+ * ARTHAMONT seed — owner account, instruments with real contract specs,
  * default trading rules, checklist templates, and clearly-labeled DEMO content.
  *
  * Run: npm run db:seed
@@ -18,15 +18,15 @@ async function hashPassword(password: string) {
 }
 
 async function main() {
-  const email = (process.env.OWNER_EMAIL ?? "owner@nayxor.local").toLowerCase();
-  const password = process.env.OWNER_PASSWORD ?? "nayxor-dev-password";
+  const email = (process.env.OWNER_EMAIL ?? "owner@arthamont.local").toLowerCase();
+  const password = process.env.OWNER_PASSWORD ?? "arthamont-dev-password";
 
   // ── Owner ────────────────────────────────────────────────────────────
   const passwordHash = await hashPassword(password);
   const user = await db.user.upsert({
     where: { email },
     update: {},
-    create: { email, name: "NAYXOR", passwordHash, role: "OWNER" },
+    create: { email, name: "ARTHAMONT", passwordHash, role: "OWNER" },
   });
   console.log("✓ owner:", user.email);
 
@@ -35,14 +35,14 @@ async function main() {
     update: {},
     create: {
       userId: user.id,
-      bio: "NAYXOR is my independent space for trading, research, and documenting the pursuit of better decisions. Across futures, forex, and Indian markets, the objective remains the same: approach uncertainty with preparation, structure, and discipline.",
+      bio: "ARTHAMONT is my independent space for trading, research, and documenting the pursuit of better decisions. Across futures, forex, and Indian markets, the objective remains the same: approach uncertainty with preparation, structure, and discipline.",
       tradingInterests: ["Index futures", "FX majors & metals", "Indian index derivatives"],
       riskApproach: "Fixed fractional risk per trade. Daily loss limits are hard stops, not suggestions. Size follows the stop distance, never the conviction.",
       longTermObjectives: "Build a documented, repeatable process — consistency measured in rule adherence, not any single outcome.",
       journeyTimeline: [
         { year: "Start", title: "First charts", body: "Began studying market structure and order flow across index futures." },
         { year: "Process", title: "System over signals", body: "Moved from reactive trading to a written playbook and journaling routine." },
-        { year: "Now", title: "NAYXOR", body: "This site — a public archive and private headquarters for the work." },
+        { year: "Now", title: "ARTHAMONT", body: "This site — a public archive and private headquarters for the work." },
       ],
       socialLinks: {},
     },

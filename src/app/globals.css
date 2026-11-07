@@ -2,7 +2,7 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* ── NAYXOR design tokens ─────────────────────────────────────────────── */
+/* ── ARTHAMONT design tokens ─────────────────────────────────────────────── */
 /* Dark is the primary brand identity. Light is independently art-directed. */
 
 :root {
@@ -70,6 +70,7 @@
 
   --font-sans: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-ibm-plex-mono), ui-monospace, monospace;
+  --font-display: var(--font-fraunces), Georgia, serif;
 }
 
 /* ── Base ─────────────────────────────────────────────────────────────── */
@@ -112,6 +113,10 @@ body {
   line-height: 0.95;
 }
 
+.font-display {
+  font-family: var(--font-display);
+}
+
 .numeric {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
@@ -147,7 +152,7 @@ body {
   }
 }
 
-/* NAYXOR loader — precision line sweep */
+/* ARTHAMONT loader — precision line sweep */
 @keyframes nx-loader {
   0% { transform: scaleX(0); transform-origin: left; }
   45% { transform: scaleX(1); transform-origin: left; }

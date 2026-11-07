@@ -8,7 +8,7 @@ import { MicroLabel } from "@/components/ui/primitives";
 
 export const metadata: Metadata = {
   title: "Sign in",
-  description: "NAYXOR private workspace — owner access only.",
+  description: "ARTHAMONT private workspace — owner access only.",
   robots: { index: false, follow: false },
 };
 

@@ -12,7 +12,7 @@ const cols = [
     ],
   },
   {
-    title: "NAYXOR",
+    title: "Arthamont",
     links: [
       { href: "/about", label: "About" },
       { href: "/workspace", label: "Workspace" },
@@ -28,9 +28,10 @@ export function Footer() {
         <div className="flex flex-col justify-between gap-10 md:flex-row">
           <div className="space-y-4">
             <Wordmark className="text-2xl" />
-            <p className="micro-label">Discipline · Precision · Execution</p>
+            <p className="micro-label">Conviction · Discipline · Longevity</p>
             <p className="max-w-sm text-xs leading-relaxed text-text-faint">
-              Independent research and a personal trading journal across US futures, forex, and Indian markets.
+              Arthamont Research — an independent trading and research initiative across US futures, global markets,
+              and Indian markets.
             </p>
           </div>
           <div className="grid grid-cols-2 gap-12">
@@ -56,8 +57,8 @@ export function Footer() {
             for documentation purposes only — it is not financial advice, investment advice, or a solicitation to trade.
           </p>
           <div className="flex items-center justify-between">
-            <span>© {new Date().getFullYear()} NAYXOR</span>
-            <span className="numeric">TRADE THE PLAN. NOT THE NOISE.</span>
+            <span>© {new Date().getFullYear()} ARTHAMONT</span>
+            <span className="numeric">CONVICTION. DISCIPLINE. LONGEVITY.</span>
           </div>
         </div>
       </div>

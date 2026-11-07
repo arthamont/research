@@ -120,7 +120,7 @@ export function NxLoader({ className }: { className?: string }) {
       <div className="h-px w-24 overflow-hidden bg-border">
         <div className="nx-loader h-px w-full bg-accent" />
       </div>
-      <span className="micro-label nx-tick">NAYXOR</span>
+      <span className="micro-label nx-tick">ARTHAMONT</span>
     </div>
   );
 }

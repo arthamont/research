@@ -1,4 +1,4 @@
-// NAYXOR — data model
+// ARTHAMONT — data model
 // Generator + datasource
 generator client {
   provider = "prisma-client-js"

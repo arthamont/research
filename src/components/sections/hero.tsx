@@ -95,43 +95,42 @@ export function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.2, ease: EASE }}
         >
-          Independent trader / Research / Execution
+          Conviction. Discipline. Longevity.
         </motion.p>
 
         <div className="mt-8 overflow-hidden">
           <motion.h1
-            className="display-xl select-none text-[17vw] leading-[0.9] sm:text-[13vw] lg:text-[11rem]"
+            className="font-display select-none text-[13vw] font-semibold leading-[0.95] tracking-[-0.02em] sm:text-[10vw] lg:text-[8.5rem]"
             initial={{ y: "105%" }}
             animate={{ y: 0 }}
             transition={{ duration: 1, delay: 0.35, ease: EASE }}
-            aria-label="NAYXOR"
+            aria-label="ARTHAMONT"
           >
-            NAY
             <span className="relative inline-block">
-              X
+              A
               <motion.span
                 aria-hidden
-                className="absolute left-1/2 top-1/2 block h-[0.045em] w-[0.62em] -translate-x-1/2 -translate-y-1/2 bg-accent"
+                className="absolute left-1/2 top-[62%] block h-[0.045em] w-[0.52em] -translate-x-1/2 bg-accent"
                 initial={{ scaleX: 0 }}
                 animate={{ scaleX: 1 }}
                 transition={{ duration: 0.7, delay: 1.4, ease: EASE }}
               />
             </span>
-            OR
+            RTHAMONT
           </motion.h1>
         </div>
 
         <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_auto] lg:items-end">
           <div>
             <motion.p
-              className="display-xl text-3xl text-text sm:text-4xl lg:text-5xl"
+              className="font-display text-3xl font-medium text-text sm:text-4xl lg:text-5xl"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 1, ease: EASE }}
             >
-              Trade the plan.
+              Built on principle.
               <br />
-              <span className="text-text-secondary">Not the noise.</span>
+              <span className="text-text-secondary">Defined by time.</span>
             </motion.p>
             <motion.p
               className="mt-6 max-w-md text-sm leading-relaxed text-text-secondary sm:text-base"
@@ -139,8 +138,8 @@ export function Hero() {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.8, delay: 1.3 }}
             >
-              Three markets. One mindset. A personal pursuit of disciplined execution, independent thinking, and
-              continuous refinement.
+              An independent pursuit of disciplined trading, rigorous market research, and long-term capital
+              stewardship.
             </motion.p>
           </div>
 
@@ -152,19 +151,22 @@ export function Hero() {
           >
             <div className="flex flex-wrap gap-3">
               <Link
-                href="/playbook"
+                href="/about"
                 className="border border-accent bg-accent px-6 py-3 font-mono text-xs uppercase tracking-[0.16em] text-bg transition-colors hover:bg-accent-text"
               >
-                Explore my process
+                Explore our philosophy
               </Link>
               <Link
-                href="/journal"
+                href="/outlook"
                 className="border border-border-strong px-6 py-3 font-mono text-xs uppercase tracking-[0.16em] text-text transition-colors hover:border-accent hover:text-accent-text"
               >
-                Enter the journal
+                Discover our research
               </Link>
             </div>
-            <p className="micro-label">US Futures / Forex / Indian Markets</p>
+            <p className="micro-label">Futures / Global markets / Research</p>
+            <p className="text-[11px] italic leading-relaxed text-text-faint">
+              An independent trading and research initiative with a long-term institutional vision.
+            </p>
           </motion.div>
         </div>
       </div>

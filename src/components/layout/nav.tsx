@@ -61,10 +61,10 @@ export function Nav() {
           )}
           aria-label="Primary"
         >
-          <Link href="/" className="flex items-center gap-3 text-text" aria-label="NAYXOR home">
+          <Link href="/" className="flex items-center gap-3 text-text" aria-label="ARTHAMONT home">
             <Monogram size={26} className="sm:hidden" />
             <Wordmark className="hidden text-lg sm:inline-flex" />
-            <span className="text-lg sm:hidden">NAYXOR</span>
+            <span className="text-lg sm:hidden">ARTHAMONT</span>
           </Link>
 
           <ul className="hidden items-center gap-7 lg:flex">
@@ -123,7 +123,7 @@ export function Nav() {
         aria-label="Navigation menu"
       >
         <div className="flex h-20 items-center justify-between px-5">
-          <span className="text-lg font-semibold tracking-[0.08em]">NAYXOR</span>
+          <span className="text-lg font-semibold tracking-[0.08em]">ARTHAMONT</span>
           <button
             type="button"
             onClick={() => setOpen(false)}

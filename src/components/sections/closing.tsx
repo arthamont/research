@@ -14,7 +14,7 @@ export function AboutSection() {
           <div>
             <Reveal delay={0.15}>
               <p className="text-lg leading-relaxed text-text-secondary">
-                NAYXOR is my independent space for trading, research, and documenting the pursuit of better decisions.
+                ARTHAMONT is my independent space for trading, research, and documenting the pursuit of better decisions.
                 Across futures, forex, and Indian markets, the objective remains the same: approach uncertainty with
                 preparation, structure, and discipline.
               </p>
@@ -24,7 +24,7 @@ export function AboutSection() {
             </Reveal>
             <Reveal delay={0.25} className="mt-10">
               <ButtonLink href="/about" variant="secondary">
-                More about NAYXOR
+                More about ARTHAMONT
               </ButtonLink>
             </Reveal>
           </div>

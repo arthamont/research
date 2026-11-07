@@ -47,7 +47,7 @@ export function TerminalSection() {
             <div className="border border-border-strong bg-bg p-2 shadow-2xl">
               <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
                 <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-text-faint">
-                  NAYXOR / Terminal — preview
+                  ARTHAMONT / Terminal — preview
                 </span>
                 <span className="flex gap-1.5">
                   {[0, 1, 2].map((i) => (

@@ -39,7 +39,7 @@ export function PageHeader({ title, children }: { title: string; children?: Reac
   return (
     <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
       <div>
-        <p className="micro-label">NAYXOR / Workspace</p>
+        <p className="micro-label">ARTHAMONT / Workspace</p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight">{title}</h1>
       </div>
       {children && <div className="flex gap-3">{children}</div>}

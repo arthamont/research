@@ -1,4 +1,4 @@
-# NAYXOR
+# ARTHAMONT
 
 **Trade the plan. Not the noise.**
 

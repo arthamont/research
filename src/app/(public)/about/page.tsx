@@ -7,7 +7,7 @@ export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "About",
-  description: "The person behind NAYXOR — an independent trader documenting the pursuit of better decisions.",
+  description: "The person behind ARTHAMONT — an independent trader documenting the pursuit of better decisions.",
 };
 
 interface TimelineItem {
@@ -36,7 +36,7 @@ export default async function AboutPage() {
       <Reveal delay={0.15}>
         <p className="mt-10 max-w-2xl text-lg leading-relaxed text-text-secondary">
           {settings?.bio ??
-            "NAYXOR is my independent space for trading, research, and documenting the pursuit of better decisions. Across futures, forex, and Indian markets, the objective remains the same: approach uncertainty with preparation, structure, and discipline."}
+            "ARTHAMONT is my independent space for trading, research, and documenting the pursuit of better decisions. Across futures, forex, and Indian markets, the objective remains the same: approach uncertainty with preparation, structure, and discipline."}
         </p>
       </Reveal>
 

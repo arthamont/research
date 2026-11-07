@@ -6,7 +6,7 @@ import { DashboardShell } from "@/components/dashboard/shell";
 export const preferredRegion = "sin1";
 
 export const metadata = {
-  title: { default: "Workspace", template: "%s · NAYXOR Workspace" },
+  title: { default: "Workspace", template: "%s · ARTHAMONT Workspace" },
   robots: { index: false, follow: false },
 };
 

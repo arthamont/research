@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
-export const alt = "NAYXOR — Trade the plan. Not the noise.";
+export const alt = "ARTHAMONT — Built on principle. Defined by time.";
 
 export default function OG() {
   return new ImageResponse(
@@ -21,16 +21,16 @@ export default function OG() {
         }}
       >
         <div style={{ fontSize: 20, letterSpacing: 6, color: "#A3AAB3", textTransform: "uppercase" }}>
-          Independent trader · Research · Execution
+          Conviction · Discipline · Longevity
         </div>
-        <div style={{ fontSize: 140, fontWeight: 700, letterSpacing: 8, marginTop: 24, display: "flex" }}>
-          NAY<span style={{ color: "#D5A267" }}>X</span>OR
+        <div style={{ fontSize: 120, fontWeight: 700, letterSpacing: 8, marginTop: 24, display: "flex" }}>
+          <span style={{ color: "#D5A267" }}>A</span>RTHAMONT
         </div>
         <div style={{ fontSize: 40, color: "#A3AAB3", marginTop: 32 }}>
-          Trade the plan. Not the noise.
+          Built on principle. Defined by time.
         </div>
         <div style={{ fontSize: 18, color: "#5F6873", marginTop: 48, letterSpacing: 4, textTransform: "uppercase" }}>
-          US Futures / Forex / Indian Markets
+          Futures / Global Markets / Research
         </div>
       </div>
     ),

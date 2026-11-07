@@ -8,7 +8,7 @@ export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "Playbook",
-  description: "The documented trading methodology — frameworks, models, and rules behind every NAYXOR trade.",
+  description: "The documented trading methodology — frameworks, models, and rules behind every ARTHAMONT trade.",
 };
 
 export default async function PlaybookPage() {

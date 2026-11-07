@@ -4,7 +4,7 @@ import { Reveal, RevealText } from "@/components/motion/reveal";
 
 export const metadata: Metadata = {
   title: "Workspace",
-  description: "The NAYXOR private trading headquarters — daily preparation, journaling, analytics, and review.",
+  description: "The ARTHAMONT private trading headquarters — daily preparation, journaling, analytics, and review.",
 };
 
 const features = [
@@ -53,7 +53,7 @@ export default function WorkspacePage() {
       </RevealText>
       <Reveal delay={0.15}>
         <p className="mt-8 max-w-xl text-sm leading-relaxed text-text-secondary sm:text-base">
-          The NAYXOR terminal is the private side of this site — where preparation happens, trades are journaled,
+          The ARTHAMONT terminal is the private side of this site — where preparation happens, trades are journaled,
           and execution is graded. Everything below requires authentication.
         </p>
       </Reveal>
