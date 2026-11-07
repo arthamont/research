@@ -2,6 +2,7 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/require-user";
 import { getSessionStatuses } from "@/lib/sessions";
+import { fetchEconCalendar } from "@/lib/econ-calendar";
 import { SessionMonitor } from "@/components/dashboard/session-monitor";
 import { Widget, Metric, PageHeader } from "@/components/dashboard/widgets";
 import { ButtonLink, Tag } from "@/components/ui/primitives";
@@ -15,7 +16,12 @@ export default async function DashboardPage() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const [settings, plan, todayTrades, recentTrades, events, checklistEntries, closedTrades, watchlist] =
+  const todayStr = today.toISOString().slice(0, 10);
+  const in14 = new Date(today);
+  in14.setUTCDate(in14.getUTCDate() + 14);
+  const in14Str = in14.toISOString().slice(0, 10);
+
+  const [settings, plan, todayTrades, recentTrades, events, checklistEntries, closedTrades, watchlist, dayNote] =
     await Promise.all([
       db.userSettings.findUnique({ where: { userId: user.id } }),
       db.tradingPlan.findUnique({ where: { userId_date: { userId: user.id, date: today } } }),
@@ -26,11 +32,7 @@ export default async function DashboardPage() {
         take: 5,
         include: { instrument: true, setup: true },
       }),
-      db.economicEvent.findMany({
-        where: { eventAt: { gte: new Date() } },
-        orderBy: { eventAt: "asc" },
-        take: 4,
-      }),
+      fetchEconCalendar({ release_state: "upcoming", from_date: todayStr, till_date: in14Str }),
       db.checklistEntry.findMany({
         where: { userId: user.id, date: today },
         include: { template: true },
@@ -42,6 +44,7 @@ export default async function DashboardPage() {
         take: 50,
       }),
       db.watchlistItem.findMany({ where: { userId: user.id }, include: { instrument: true }, take: 4 }),
+      db.marketNote.findFirst({ where: { userId: user.id, date: today } }),
     ]);
 
   const sessions = getSessionStatuses();
@@ -188,17 +191,22 @@ export default async function DashboardPage() {
           )}
         </Widget>
 
-        {/* Events */}
-        <Widget title="Upcoming events">
+        {/* Events (BusinessQuant feed) */}
+        <Widget
+          title="Upcoming releases"
+          action={<Link href="/dashboard/economic" className="font-mono text-[10px] uppercase text-text-faint hover:text-accent-text">calendar</Link>}
+        >
           {events.length === 0 ? (
-            <p className="text-sm text-text-faint">No events scheduled.</p>
+            <p className="text-sm text-text-faint">
+              {process.env.BQ_API_KEY ? "Nothing scheduled in the next 14 days." : "Set BQ_API_KEY for the release feed."}
+            </p>
           ) : (
             <ul className="space-y-2">
-              {events.map((e) => (
-                <li key={e.id} className="flex items-baseline justify-between gap-3 text-sm">
-                  <span className="truncate text-text-secondary">{e.title}</span>
-                  <span className={`shrink-0 font-mono text-[10px] ${e.impact === "HIGH" ? "text-warning" : "text-text-faint"}`}>
-                    {formatDate(e.eventAt)}
+              {events.slice(0, 4).map((e) => (
+                <li key={e.code} className="flex items-baseline justify-between gap-3 text-sm">
+                  <span className="truncate text-text-secondary">{e.name}</span>
+                  <span className="shrink-0 font-mono text-[10px] text-text-faint">
+                    {e.days_until_next !== null ? `${e.days_until_next}d` : e.next_release}
                   </span>
                 </li>
               ))}
@@ -206,6 +214,13 @@ export default async function DashboardPage() {
           )}
         </Widget>
       </div>
+
+      {/* Day note */}
+      {dayNote && (
+        <Widget title={`Day note — ${todayStr}`} className="mt-4">
+          <p className="whitespace-pre-wrap font-mono text-xs leading-relaxed text-text-secondary">{dayNote.content}</p>
+        </Widget>
+      )}
 
       {/* Recent journal activity */}
       <Widget

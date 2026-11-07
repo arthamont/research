@@ -76,7 +76,6 @@ enum EventImpact {
   MEDIUM
   HIGH
 }
-
 // ─── Auth.js (NextAuth) ──────────────────────────────────────────────────────
 
 model User {
@@ -103,7 +102,6 @@ model User {
   weeklyReviews      WeeklyReview[]
   watchlistItems     WatchlistItem[]
   marketNotes        MarketNote[]
-  economicEvents     EconomicEvent[]
 }
 
 model Account {
@@ -484,6 +482,8 @@ model WatchlistItem {
   @@unique([userId, instrumentId])
 }
 
+/// One private note per day — "how the day is going to behave".
+/// Editable only in the workspace; never rendered publicly.
 model MarketNote {
   id        String   @id @default(cuid())
   userId    String
@@ -492,19 +492,11 @@ model MarketNote {
   content   String   @db.Text
   tags      String[] @default([])
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
 }
 
-model EconomicEvent {
-  id        String      @id @default(cuid())
-  userId    String?
-  title     String
-  currency  String?
-  impact    EventImpact @default(MEDIUM)
-  eventAt   DateTime
-  notes     String?
-  createdAt DateTime    @default(now())
 
-  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
-}

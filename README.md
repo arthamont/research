@@ -35,6 +35,7 @@ npm run dev                 # http://localhost:3000
 | `OWNER_EMAIL` | **The only email allowed to sign in** (Google + credentials) |
 | `OWNER_PASSWORD` | Seed-only: initial credentials password |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth (optional) |
+| `BQ_API_KEY` | BusinessQuant economic calendar feed (optional, free key at businessquant.com) |
 
 ### Google sign-in (optional)
 
@@ -55,6 +56,7 @@ npm run dev                 # http://localhost:3000
 | `/playbook` methodology | `/dashboard/playbook` setups & rules |
 | `/about` identity | `/dashboard/watchlist` levels & bias |
 | `/workspace` feature overview | `/dashboard/reviews` plan/checklists/reviews |
+| | `/dashboard/economic` live release calendar + per-day private notes |
 | `/login` owner sign-in | `/dashboard/content` CMS · `/dashboard/settings` |
 
 ## Privacy model

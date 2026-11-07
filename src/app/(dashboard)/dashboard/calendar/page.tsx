@@ -31,7 +31,8 @@ export default async function CalendarPage({
   const monthStart = new Date(Date.UTC(year, month, 1));
   const monthEnd = new Date(Date.UTC(year, month + 1, 1));
 
-  const [trades, reviews] = await Promise.all([
+  const selectedDate = params.day ? new Date(params.day) : null;
+  const [trades, reviews, dayNote] = await Promise.all([
     db.trade.findMany({
       where: {
         userId: user.id,
@@ -45,6 +46,11 @@ export default async function CalendarPage({
       where: { userId: user.id, date: { gte: monthStart, lt: monthEnd } },
       select: { date: true },
     }),
+    selectedDate && !isNaN(selectedDate.getTime())
+      ? db.marketNote.findFirst({
+          where: { userId: user.id, date: new Date(Date.UTC(selectedDate.getUTCFullYear(), selectedDate.getUTCMonth(), selectedDate.getUTCDate())) },
+        })
+      : Promise.resolve(null),
   ]);
 
   const reviewDays = new Set(reviews.map((r) => r.date.toISOString().slice(0, 10)));
@@ -158,9 +164,14 @@ export default async function CalendarPage({
         </div>
 
         <Widget title={selectedDay ? `Day — ${selectedDay}` : "Select a day"}>
+          {dayNote && (
+            <p className="mb-4 whitespace-pre-wrap border-b border-border pb-3 font-mono text-[11px] leading-relaxed text-text-secondary">
+              {dayNote.content}
+            </p>
+          )}
           {!selectedDay ? (
             <p className="text-sm text-text-faint">Choose a day to inspect its trades and review.</p>
-          ) : dayTrades.length === 0 ? (
+          ) : dayTrades.length === 0 && !dayNote ? (
             <p className="text-sm text-text-faint">No closed trades on this day.</p>
           ) : (
             <ul className="space-y-3">

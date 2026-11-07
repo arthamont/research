@@ -265,37 +265,27 @@ export async function upsertWeeklyReview(data: unknown) {
   return {};
 }
 
-/* ── Economic events ──────────────────────────────────────────────────── */
+/* ── Day note (private, one per day) ─────────────────────────────────── */
 
-const eventSchema = z.object({
-  title: z.string().min(1).max(160),
-  currency: z.string().optional().nullable(),
-  impact: z.enum(["LOW", "MEDIUM", "HIGH"]).default("MEDIUM"),
-  eventAt: z.string().min(1),
-  notes: z.string().optional().nullable(),
-});
-
-export async function upsertEvent(id: string | null, data: unknown) {
+export async function upsertDayNote(date: string, content: string) {
   const user = await requireUser();
-  const parsed = eventSchema.safeParse(data);
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
-  const d = parsed.data;
-  const payload = { ...d, eventAt: new Date(d.eventAt), userId: user.id };
-  if (id) {
-    await db.economicEvent.updateMany({ where: { id, userId: user.id }, data: payload });
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return { error: "Invalid date" };
+  d.setHours(0, 0, 0, 0);
+  const text = content.trim();
+  if (!text) {
+    await db.marketNote.deleteMany({ where: { userId: user.id, date: d } });
   } else {
-    await db.economicEvent.create({ data: payload });
+    await db.marketNote.upsert({
+      where: { userId_date: { userId: user.id, date: d } },
+      update: { content: text },
+      create: { userId: user.id, date: d, content: text },
+    });
   }
+  revalidatePath("/dashboard/economic");
+  revalidatePath("/dashboard/calendar");
   revalidatePath("/dashboard");
-  revalidatePath("/dashboard/settings");
   return {};
-}
-
-export async function deleteEvent(id: string) {
-  const user = await requireUser();
-  await db.economicEvent.deleteMany({ where: { id, userId: user.id } });
-  revalidatePath("/dashboard");
-  revalidatePath("/dashboard/settings");
 }
 
 /* ── Content: research articles ───────────────────────────────────────── */
