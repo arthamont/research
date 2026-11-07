@@ -35,23 +35,34 @@ export function EconCalendarView({ rows, noteDate, notes }: { rows: BqCalendarRo
   const [state, setState] = useState<"upcoming" | "released" | "all">("upcoming");
   const [category, setCategory] = useState<string | null>(null);
   const [q, setQ] = useState("");
-  const [week, setWeek] = useState(false);
+  const [weekOffset, setWeekOffset] = useState(0);
   const [noteDay, setNoteDay] = useState(noteDate);
 
   const categories = useMemo(() => [...new Set(rows.map((r) => r.category))].sort(), [rows]);
 
+  // Week frame: Sunday → Saturday
+  const { weekStart, weekEnd, weekLabel } = useMemo(() => {
+    const now = new Date(noteDate + "T00:00:00Z");
+    const dow = now.getUTCDay(); // Sunday = 0
+    const start = new Date(now);
+    start.setUTCDate(start.getUTCDate() - dow + weekOffset * 7);
+    const end = new Date(start);
+    end.setUTCDate(end.getUTCDate() + 6);
+    const iso = (d: Date) => d.toISOString().slice(0, 10);
+    const lbl = `${start.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" })} – ${end.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" })}`;
+    return { weekStart: iso(start), weekEnd: iso(end), weekLabel: lbl };
+  }, [noteDate, weekOffset]);
+
   const filtered = useMemo(() => {
-    const now = new Date();
-    const weekEnd = new Date(now.getTime() + 7 * 86400000).toISOString().slice(0, 10);
     const needle = q.trim().toLowerCase();
     return rows.filter((r) => {
+      if (!r.next_release || r.next_release < weekStart || r.next_release > weekEnd) return false;
       if (state !== "all" && r.release_state !== state) return false;
       if (category && r.category !== category) return false;
-      if (week && (!r.next_release || r.next_release > weekEnd)) return false;
       if (needle && !`${r.name} ${r.code}`.toLowerCase().includes(needle)) return false;
       return true;
     });
-  }, [rows, state, category, q, week]);
+  }, [rows, state, category, q, weekStart, weekEnd]);
 
   const groups = useMemo(() => {
     const g = new Map<string, BqCalendarRow[]>();
@@ -65,18 +76,30 @@ export function EconCalendarView({ rows, noteDate, notes }: { rows: BqCalendarRo
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
       <div>
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          {(["upcoming", "released", "all"] as const).map((s) => (
-            <button key={s} onClick={() => setState(s)} className={chip(state === s)}>{s}</button>
-          ))}
-          <button onClick={() => setWeek(!week)} className={chip(week)}>Next 7d</button>
+        {/* Week navigation — Sunday to Saturday */}
+        <div className="mb-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <button onClick={() => setWeekOffset((w) => w - 1)} className="border border-border px-3 py-1.5 font-mono text-xs text-text-secondary hover:border-accent" aria-label="Previous week">←</button>
+            <h2 className="text-lg font-semibold tracking-tight">{weekLabel}</h2>
+            <button onClick={() => setWeekOffset((w) => w + 1)} className="border border-border px-3 py-1.5 font-mono text-xs text-text-secondary hover:border-accent" aria-label="Next week">→</button>
+            {weekOffset !== 0 && (
+              <button onClick={() => setWeekOffset(0)} className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-faint hover:text-accent-text">
+                this week
+              </button>
+            )}
+          </div>
           <input
             type="search"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search name or code…"
-            className="ml-auto w-52 border border-border bg-surface px-3 py-1.5 text-xs text-text placeholder:text-text-faint focus:border-accent focus:outline-none"
+            className="w-52 border border-border bg-surface px-3 py-1.5 text-xs text-text placeholder:text-text-faint focus:border-accent focus:outline-none"
           />
+        </div>
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          {(["upcoming", "released", "all"] as const).map((s) => (
+            <button key={s} onClick={() => setState(s)} className={chip(state === s)}>{s}</button>
+          ))}
         </div>
         <div className="mb-6 flex flex-wrap gap-1.5">
           {categories.map((c) => (
