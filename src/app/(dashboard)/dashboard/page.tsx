@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { requireUser } from "@/lib/require-user";
 import { getSessionStatuses } from "@/lib/sessions";
 import { fetchEconCalendar } from "@/lib/econ-calendar";
+import { utcDay, localTodayStr, localMidnight } from "@/lib/dates";
 import { SessionMonitor } from "@/components/dashboard/session-monitor";
 import { Widget, Metric, PageHeader } from "@/components/dashboard/widgets";
 import { ButtonLink, Tag } from "@/components/ui/primitives";
@@ -13,10 +14,10 @@ export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
   const user = await requireUser();
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = localMidnight();
+  const todayKey = utcDay(localTodayStr())!;
 
-  const todayStr = today.toISOString().slice(0, 10);
+  const todayStr = localTodayStr();
   const in14 = new Date(today);
   in14.setUTCDate(in14.getUTCDate() + 14);
   const in14Str = in14.toISOString().slice(0, 10);
@@ -24,7 +25,7 @@ export default async function DashboardPage() {
   const [settings, plan, todayTrades, recentTrades, events, checklistEntries, closedTrades, watchlist, dayNote] =
     await Promise.all([
       db.userSettings.findUnique({ where: { userId: user.id } }),
-      db.tradingPlan.findUnique({ where: { userId_date: { userId: user.id, date: today } } }),
+      db.tradingPlan.findUnique({ where: { userId_date: { userId: user.id, date: todayKey } } }),
       db.trade.findMany({ where: { userId: user.id, openedAt: { gte: today } }, include: { instrument: true } }),
       db.trade.findMany({
         where: { userId: user.id },
@@ -34,7 +35,7 @@ export default async function DashboardPage() {
       }),
       fetchEconCalendar({ from: todayStr, to: in14Str }),
       db.checklistEntry.findMany({
-        where: { userId: user.id, date: today },
+        where: { userId: user.id, date: todayKey },
         include: { template: true },
       }),
       db.trade.findMany({
@@ -44,7 +45,7 @@ export default async function DashboardPage() {
         take: 50,
       }),
       db.watchlistItem.findMany({ where: { userId: user.id }, include: { instrument: true }, take: 4 }),
-      db.marketNote.findFirst({ where: { userId: user.id, date: today } }),
+      db.marketNote.findFirst({ where: { userId: user.id, date: todayKey } }),
     ]);
 
   const sessions = getSessionStatuses();

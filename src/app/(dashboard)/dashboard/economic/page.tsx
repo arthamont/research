@@ -5,14 +5,14 @@ import { PageHeader } from "@/components/dashboard/widgets";
 import { EmptyState } from "@/components/ui/primitives";
 import { EconCalendarView } from "@/components/dashboard/econ-calendar-view";
 import { DayNoteEditor } from "@/components/dashboard/day-note";
+import { localTodayStr } from "@/lib/dates";
 
 export const dynamic = "force-dynamic";
 
 export default async function EconomicPage() {
   const user = await requireUser();
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayStr = today.toISOString().slice(0, 10);
+  const todayStr = localTodayStr();
+  const today = new Date(todayStr + "T00:00:00Z");
   const from = new Date(today);
   from.setUTCDate(from.getUTCDate() - 45);
   const to = new Date(today);

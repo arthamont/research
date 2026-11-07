@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/require-user";
 import { slugify, readingTimeMinutes } from "@/lib/utils";
+import { utcDay } from "@/lib/dates";
 
 /* ── Settings ─────────────────────────────────────────────────────────── */
 
@@ -163,8 +164,8 @@ export async function upsertPlan(data: unknown) {
   const parsed = planSchema.safeParse(data);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   const d = parsed.data;
-  const date = new Date(d.date);
-  date.setHours(0, 0, 0, 0);
+  const date = utcDay(d.date);
+  if (!date) return { error: "Invalid date" };
 
   const keyLevels = (d.keyLevels ?? "")
     .split("\n").map((l) => l.trim()).filter(Boolean)
@@ -196,8 +197,8 @@ export async function saveChecklistEntry(templateId: string, date: string, check
   const user = await requireUser();
   const template = await db.checklistTemplate.findFirst({ where: { id: templateId, userId: user.id } });
   if (!template) return { error: "Template not found" };
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
+  const d = utcDay(date);
+  if (!d) return { error: "Invalid date" };
   const total = Array.isArray(template.items) ? template.items.length : 0;
   await db.checklistEntry.upsert({
     where: { templateId_date: { templateId, date: d } },
@@ -225,8 +226,8 @@ export async function upsertDailyReview(data: unknown) {
   const parsed = dailySchema.safeParse(data);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   const d = parsed.data;
-  const date = new Date(d.date);
-  date.setHours(0, 0, 0, 0);
+  const date = utcDay(d.date);
+  if (!date) return { error: "Invalid date" };
   await db.dailyReview.upsert({
     where: { userId_date: { userId: user.id, date } },
     update: { summary: d.summary, executionGrade: d.executionGrade, mistakes: d.mistakes, lessons: d.lessons, emotionalReview: d.emotionalReview },
@@ -254,8 +255,8 @@ export async function upsertWeeklyReview(data: unknown) {
   const parsed = weeklySchema.safeParse(data);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   const d = parsed.data;
-  const weekStart = new Date(d.weekStart);
-  weekStart.setHours(0, 0, 0, 0);
+  const weekStart = utcDay(d.weekStart);
+  if (!weekStart) return { error: "Invalid date" };
   await db.weeklyReview.upsert({
     where: { userId_weekStart: { userId: user.id, weekStart } },
     update: d,
@@ -269,9 +270,8 @@ export async function upsertWeeklyReview(data: unknown) {
 
 export async function upsertDayNote(date: string, content: string) {
   const user = await requireUser();
-  const d = new Date(date);
-  if (isNaN(d.getTime())) return { error: "Invalid date" };
-  d.setHours(0, 0, 0, 0);
+  const d = utcDay(date);
+  if (!d) return { error: "Invalid date" };
   const text = content.trim();
   if (!text) {
     await db.marketNote.deleteMany({ where: { userId: user.id, date: d } });

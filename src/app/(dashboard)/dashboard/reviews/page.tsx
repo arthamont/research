@@ -2,14 +2,11 @@ import { db } from "@/lib/db";
 import { requireUser } from "@/lib/require-user";
 import { PageHeader } from "@/components/dashboard/widgets";
 import { ReviewsManager } from "@/components/dashboard/reviews-manager";
+import { utcDay, localTodayStr } from "@/lib/dates";
 
 export const dynamic = "force-dynamic";
 
-function startOfToday() {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
+
 
 function startOfWeek(d: Date) {
   const w = new Date(d);
@@ -20,9 +17,7 @@ function startOfWeek(d: Date) {
 export default async function ReviewsPage({ searchParams }: { searchParams: Promise<{ date?: string }> }) {
   const user = await requireUser();
   const params = await searchParams;
-  const parsed = params.date ? new Date(params.date) : null;
-  const selected = parsed && !isNaN(parsed.getTime()) ? parsed : new Date();
-  selected.setHours(0, 0, 0, 0);
+  const selected = (params.date ? utcDay(params.date) : null) ?? utcDay(localTodayStr())!;
 
   const weekStart = startOfWeek(selected);
 
@@ -36,7 +31,7 @@ export default async function ReviewsPage({ searchParams }: { searchParams: Prom
   ]);
 
   const dateStr = selected.toISOString().slice(0, 10);
-  const isToday = dateStr === startOfToday().toISOString().slice(0, 10);
+  const isToday = dateStr === localTodayStr();
 
   return (
     <>
