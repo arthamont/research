@@ -11,35 +11,7 @@ import { bustWorkspaceCache } from "@/lib/cached";
 /* ── Settings ─────────────────────────────────────────────────────────── */
 
 const settingsSchema = z.object({
-  maxTradesPerDay: z.coerce.number().int().min(1).max(20),
-  futuresPropRiskPct: z.coerce.number().min(0).max(100),
-  forexPropRiskPct: z.coerce.number().min(0).max(100),
-  targetRiskReward: z.coerce.number().min(0),
-  minRiskReward: z.coerce.number().min(0),
-  breakevenAfterR: z.coerce.number().min(0),
-  allowPartialExits: z.coerce.boolean(),
-  noRevengeTrading: z.coerce.boolean(),
-  noChasingMissedSetups: z.coerce.boolean(),
-  reviewWithinHours: z.coerce.number().int().min(1).max(168),
-  timezone: z.string().min(1),
-  bio: z.string().optional().nullable(),
-  riskApproach: z.string().optional().nullable(),
-  longTermObjectives: z.string().optional().nullable(),
-  tradingInterests: z.string().optional().nullable(), // comma-separated
   socialLinks: z.string().optional().nullable(), // JSON or "key:url" lines
-  about: z.record(z.string(), z.unknown()).optional(),
-  hero: z
-    .object({
-      eyebrow: z.string().optional(),
-      line1: z.string().optional(),
-      line2: z.string().optional(),
-      lede: z.string().optional(),
-      cta1Label: z.string().optional(),
-      cta2Label: z.string().optional(),
-      strip: z.string().optional(),
-      note: z.string().optional(),
-    })
-    .optional(),
 });
 
 export async function updateSettings(data: unknown) {
@@ -60,27 +32,12 @@ export async function updateSettings(data: unknown) {
     }
   }
 
-  const { hero, about, ...rest } = d;
   await db.userSettings.upsert({
     where: { userId: user.id },
-    update: {
-      ...rest,
-      heroJson: hero ?? {},
-      aboutJson: (about ?? {}) as object,
-      tradingInterests: d.tradingInterests ? d.tradingInterests.split(",").map((s) => s.trim()).filter(Boolean) : [],
-      socialLinks: social,
-    },
-    create: {
-      userId: user.id,
-      ...rest,
-      heroJson: hero ?? {},
-      aboutJson: (about ?? {}) as object,
-      tradingInterests: d.tradingInterests ? d.tradingInterests.split(",").map((s) => s.trim()).filter(Boolean) : [],
-      socialLinks: social,
-    },
+    update: { socialLinks: social },
+    create: { userId: user.id, socialLinks: social },
   });
   bustWorkspaceCache();
-  revalidatePath("/");
   revalidatePath("/dashboard/settings");
   revalidatePath("/about");
   return {};

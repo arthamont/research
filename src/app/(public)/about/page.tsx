@@ -5,7 +5,7 @@ import { Reveal, RevealText } from "@/components/motion/reveal";
 import { WingsSection } from "@/components/sections/wings";
 import { VisionSection, FounderSection } from "@/components/sections/foundation";
 import { db } from "@/lib/db";
-import { mergeAbout } from "@/lib/about-content";
+import { ABOUT_DEFAULTS } from "@/lib/about-content";
 
 export const revalidate = 300;
 
@@ -16,8 +16,12 @@ export const metadata: Metadata = {
 };
 
 export default async function AboutPage() {
-  const settings = await db.userSettings.findFirst();
-  const c = mergeAbout(settings?.aboutJson as Record<string, unknown> | null);
+  const settings = await db.userSettings.findFirst({
+    where: { user: { email: { equals: process.env.OWNER_EMAIL ?? "", mode: "insensitive" } } },
+    select: { socialLinks: true },
+  });
+  const c = ABOUT_DEFAULTS;
+  const socialLinks = (settings?.socialLinks ?? {}) as Record<string, string>;
 
   return (
     <div className="mx-auto max-w-5xl px-5 pb-24 pt-40 sm:px-8">
@@ -186,6 +190,21 @@ export default async function AboutPage() {
         <p className="micro-label mt-4">Conviction · Discipline · Longevity</p>
         <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.14em] text-text-faint">{c.lockupLabel}</p>
         <p className="mx-auto mt-6 max-w-lg text-[11px] leading-relaxed text-text-faint">{c.disclaimer}</p>
+        {Object.keys(socialLinks).length > 0 && (
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+            {Object.entries(socialLinks).map(([name, url]) => (
+              <a
+                key={name}
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="micro-label text-text-faint transition-colors hover:text-accent-text"
+              >
+                {name}
+              </a>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

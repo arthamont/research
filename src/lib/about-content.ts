@@ -81,12 +81,4 @@ export const ABOUT_DEFAULTS: AboutContent = {
     "Current activities comprise market research and analysis. Future institutional ambitions do not imply that Arthamont currently operates as a regulated investment fund, asset manager, or bank.",
 };
 
-/** Deep-merge saved aboutJson over defaults (per-section override). */
-export function mergeAbout(raw: Record<string, unknown> | null | undefined): AboutContent {
-  if (!raw) return ABOUT_DEFAULTS;
-  const c = { ...ABOUT_DEFAULTS } as Record<string, unknown>;
-  for (const k of Object.keys(ABOUT_DEFAULTS)) {
-    if (raw[k] !== undefined && raw[k] !== null) c[k] = raw[k];
-  }
-  return c as unknown as AboutContent;
-}
+

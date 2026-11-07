@@ -1,5 +1,5 @@
 import { unstable_cache } from "next/cache";
-import { revalidateTag } from "next/cache";
+import { updateTag } from "next/cache";
 import { db } from "./db";
 
 /**
@@ -9,7 +9,7 @@ import { db } from "./db";
 const TAG = "workspace";
 
 export function bustWorkspaceCache() {
-  revalidateTag(TAG, "max");
+  updateTag(TAG);
 }
 
 export const getUserSettings = unstable_cache(

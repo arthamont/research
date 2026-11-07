@@ -7,16 +7,13 @@ import { ProcessSection } from "@/components/sections/process";
 import { ResearchSection } from "@/components/sections/research";
 import { ClosingSection } from "@/components/sections/closing";
 import { NxLoader } from "@/components/ui/primitives";
-import { db } from "@/lib/db";
 
 export const revalidate = 300;
 
 export default async function HomePage() {
-  const settings = await db.userSettings.findFirst();
-  const heroContent = (settings?.heroJson as Record<string, string> | null) ?? undefined;
   return (
     <>
-      <Hero content={heroContent} />
+      <Hero />
       <FoundationSection />
       <FocusSection />
       <MarketsSection />
