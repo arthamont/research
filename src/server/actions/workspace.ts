@@ -265,6 +265,39 @@ export async function upsertWeeklyReview(data: unknown) {
   return {};
 }
 
+/* ── Economic events ──────────────────────────────────────────────────── */
+
+const eventSchema = z.object({
+  title: z.string().min(1).max(160),
+  currency: z.string().optional().nullable(),
+  impact: z.enum(["LOW", "MEDIUM", "HIGH"]).default("MEDIUM"),
+  eventAt: z.string().min(1),
+  notes: z.string().optional().nullable(),
+});
+
+export async function upsertEvent(id: string | null, data: unknown) {
+  const user = await requireUser();
+  const parsed = eventSchema.safeParse(data);
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  const d = parsed.data;
+  const payload = { ...d, eventAt: new Date(d.eventAt), userId: user.id };
+  if (id) {
+    await db.economicEvent.updateMany({ where: { id, userId: user.id }, data: payload });
+  } else {
+    await db.economicEvent.create({ data: payload });
+  }
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/settings");
+  return {};
+}
+
+export async function deleteEvent(id: string) {
+  const user = await requireUser();
+  await db.economicEvent.deleteMany({ where: { id, userId: user.id } });
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/settings");
+}
+
 /* ── Content: research articles ───────────────────────────────────────── */
 
 const articleSchema = z.object({
