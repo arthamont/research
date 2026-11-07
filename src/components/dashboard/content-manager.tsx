@@ -194,7 +194,7 @@ function CasesTab({ cases }: { cases: CaseStudy[] }) {
   const [showForm, setShowForm] = useState(false);
   const empty = {
     title: "", slug: "", summary: "", content: "", market: "FUTURES" as "FUTURES" | "FOREX" | "INDIA", instrument: "",
-    direction: "LONG" as "LONG" | "SHORT", session: "" as "" | "ASIA" | "LONDON" | "NEW_YORK" | "INDIA" | "OVERLAP" | "OTHER", setup: "", tradeDate: "", rrPlanned: "", rrActual: "",
+    direction: "LONG" as "LONG" | "SHORT", session: "" as "" | "Q1" | "Q2" | "Q3" | "Q4", setup: "", tradeDate: "", rrPlanned: "", rrActual: "",
     grade: "", chartImage: "", tags: "", status: "DRAFT" as "DRAFT" | "PUBLISHED" | "ARCHIVED", isDemo: false,
   };
   const [form, setForm] = useState(empty);
@@ -248,7 +248,7 @@ function CasesTab({ cases }: { cases: CaseStudy[] }) {
             <label className={lbl}>Session</label>
             <select className={field} value={form.session} onChange={set("session")}>
               <option value="">—</option>
-              {["ASIA", "LONDON", "NEW_YORK", "INDIA", "OVERLAP", "OTHER"].map((s) => <option key={s}>{s}</option>)}
+              {["Q1", "Q2", "Q3", "Q4"].map((s) => <option key={s}>{s}</option>)}
             </select>
           </div>
           <div>

@@ -1,285 +1,189 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import type { Instrument, TradingAccount, Setup, Trade } from "@prisma/client";
 import { createTrade, updateTrade } from "@/server/actions/trades";
-import { computePlannedRR } from "@/lib/calculations";
-import { cn } from "@/lib/utils";
+import { computeGrossPnl } from "@/lib/calculations";
+import { formatCurrency, cn } from "@/lib/utils";
+import type { Instrument, Trade } from "@prisma/client";
+import { Button } from "@/components/ui/primitives";
+import { field, lbl } from "./generic-forms";
 
-interface Props {
-  instruments: Pick<Instrument, "id" | "symbol" | "market" | "pointValue" | "currency">[];
-  accounts: Pick<TradingAccount, "id" | "name" | "type">[];
-  setups: Pick<Setup, "id" | "name">[];
-  trade?: Trade;
+const SESSIONS = [
+  { value: "Q1", label: "Asia (Q1)" },
+  { value: "Q2", label: "London (Q2)" },
+  { value: "Q3", label: "New York AM (Q3)" },
+  { value: "Q4", label: "New York PM (Q4)" },
+];
+
+const num = (v: unknown) => (v === null || v === undefined ? "" : String(v));
+const toLocal = (d: Date | string | null | undefined) =>
+  d ? new Date(d).toLocaleString("sv-SE").slice(0, 16) : "";
+
+function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className={lbl}>{label}{required ? " *" : ""}</span>
+      {children}
+    </label>
+  );
 }
 
-const field = "w-full border border-border bg-surface px-3 py-2.5 text-sm text-text focus:border-accent focus:outline-none";
-const label = "micro-label mb-1.5 block";
-
-export function TradeForm({ instruments, accounts, setups, trade }: Props) {
+export function TradeForm({ trade, instruments }: { trade?: Trade; instruments: Instrument[] }) {
   const router = useRouter();
+  const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({
-    accountId: trade?.accountId ?? "",
-    instrumentId: trade?.instrumentId ?? instruments[0]?.id ?? "",
-    setupId: trade?.setupId ?? "",
-    direction: (trade?.direction ?? "LONG") as "LONG" | "SHORT",
-    status: (trade?.status ?? "OPEN") as "OPEN" | "CLOSED" | "CANCELLED",
+  const [values, setValues] = useState({
+    instrumentId: trade?.instrumentId ?? "",
+    direction: trade?.direction ?? "LONG",
     session: trade?.session ?? "",
-    openedAt: trade ? toLocal(trade.openedAt) : toLocal(new Date()),
-    closedAt: trade?.closedAt ? toLocal(trade.closedAt) : "",
-    entryPrice: trade?.entryPrice?.toString() ?? "",
-    stopLoss: trade?.stopLoss?.toString() ?? "",
-    takeProfit: trade?.takeProfit?.toString() ?? "",
-    exitPrice: trade?.exitPrice?.toString() ?? "",
-    positionSize: trade?.positionSize?.toString() ?? "1",
-    currency: trade?.currency ?? "USD",
-    feesCommission: trade?.feesCommission?.toString() ?? "0",
+    openedAt: toLocal(trade?.openedAt),
+    closedAt: toLocal(trade?.closedAt),
+    entryPrice: num(trade?.entryPrice),
+    exitPrice: num(trade?.exitPrice),
+    stopAmount: num(trade?.plannedRisk),
+    targetAmount: num(trade?.plannedTarget),
+    positionSize: num(trade?.positionSize) || "1",
+    feesCommission: num(trade?.feesCommission) || "0",
     thesis: trade?.thesis ?? "",
     executionNotes: trade?.executionNotes ?? "",
     emotionalNotes: trade?.emotionalNotes ?? "",
     mistakes: trade?.mistakes ?? "",
     lessons: trade?.lessons ?? "",
-    executionGrade: trade?.executionGrade?.toString() ?? "",
-    ruleCompliant: trade?.ruleCompliant == null ? "" : String(trade.ruleCompliant),
+    executionGrade: num(trade?.executionGrade),
+    ruleCompliant: (trade?.ruleCompliant ?? null) as boolean | null,
   });
 
-  function toLocal(d: Date) {
-    const pad = (n: number) => String(n).padStart(2, "0");
-    const dt = new Date(d);
-    return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
-  }
+  const set = <K extends keyof typeof values>(k: K, v: (typeof values)[K]) =>
+    setValues((s) => ({ ...s, [k]: v }));
 
-  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
-    setForm((f) => ({ ...f, [k]: e.target.value }));
-
-  const instrument = instruments.find((i) => i.id === form.instrumentId);
-  const entry = parseFloat(form.entryPrice);
-  const stop = parseFloat(form.stopLoss);
-  const target = parseFloat(form.takeProfit);
-  const size = parseFloat(form.positionSize) || 1;
+  const instrument = instruments.find((i) => i.id === values.instrumentId) ?? null;
+  const entry = parseFloat(values.entryPrice);
+  const exit = parseFloat(values.exitPrice);
+  const size = parseFloat(values.positionSize) || 1;
+  const fees = parseFloat(values.feesCommission) || 0;
+  const stopAmt = parseFloat(values.stopAmount);
+  const tgtAmt = parseFloat(values.targetAmount);
   const pv = instrument ? Number(instrument.pointValue) : 0;
 
-  const plannedRR =
-    !isNaN(entry) && !isNaN(stop) && !isNaN(target)
-      ? computePlannedRR({ direction: form.direction, entry, stop, target })
-      : null;
-  const plannedRisk = !isNaN(entry) && !isNaN(stop) ? Math.abs(entry - stop) * size * pv : null;
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    setSaving(true);
-    setError(null);
-    const payload = {
-      ...form,
-      accountId: form.accountId || null,
-      setupId: form.setupId || null,
-      session: form.session || null,
-      closedAt: form.closedAt || null,
-      stopLoss: form.stopLoss ? parseFloat(form.stopLoss) : null,
-      takeProfit: form.takeProfit ? parseFloat(form.takeProfit) : null,
-      exitPrice: form.exitPrice ? parseFloat(form.exitPrice) : null,
-      executionGrade: form.executionGrade ? parseInt(form.executionGrade) : null,
-      ruleCompliant: form.ruleCompliant === "" ? null : form.ruleCompliant === "true",
+  const preview = useMemo(() => {
+    if (!instrument || !entry || !exit) return null;
+    const gross = computeGrossPnl({ direction: values.direction as "LONG" | "SHORT", entry, exit, positionSize: size, pointValue: pv });
+    const net = gross - fees;
+    return {
+      gross,
+      net,
+      r: !isNaN(stopAmt) && stopAmt > 0 ? net / stopAmt : null,
+      rr: !isNaN(stopAmt) && stopAmt > 0 && !isNaN(tgtAmt) && tgtAmt > 0 ? tgtAmt / stopAmt : null,
     };
-    const res = trade ? await updateTrade(trade.id, payload) : await createTrade(payload);
-    setSaving(false);
-    if ("error" in res && res.error) setError(res.error);
-    else router.push("/dashboard/journal");
-  }
+  }, [instrument, entry, exit, size, fees, stopAmt, tgtAmt, pv, values.direction]);
+
+  const submit = () =>
+    start(async () => {
+      setError(null);
+      const res = trade
+        ? await updateTrade(trade.id, { ...values, currency: instrument?.currency ?? "USD" })
+        : await createTrade({ ...values, currency: instrument?.currency ?? "USD" });
+      if (res.error) { setError(res.error); return; }
+      router.push("/dashboard/journal");
+      router.refresh();
+    });
 
   return (
-    <form onSubmit={submit} className="space-y-8">
-      {/* Core */}
-      <fieldset className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div>
-          <label className={label}>Instrument</label>
-          <select value={form.instrumentId} onChange={set("instrumentId")} className={field} required>
-            {instruments.map((i) => (
-              <option key={i.id} value={i.id}>
-                {i.symbol} — {i.market}
-              </option>
-            ))}
+    <div className="space-y-6">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Field label="Instrument" required>
+          <select className={field} value={values.instrumentId} onChange={(e) => set("instrumentId", e.target.value)}>
+            <option value="">Select…</option>
+            {instruments.map((i) => <option key={i.id} value={i.id}>{i.symbol} — {i.name}</option>)}
           </select>
-        </div>
-        <div>
-          <label className={label}>Direction</label>
-          <div className="grid grid-cols-2 gap-px border border-border bg-border">
-            {(["LONG", "SHORT"] as const).map((d) => (
-              <button
-                type="button"
-                key={d}
-                onClick={() => setForm((f) => ({ ...f, direction: d }))}
-                className={cn(
-                  "py-2.5 font-mono text-xs uppercase tracking-[0.14em] transition-colors",
-                  form.direction === d
-                    ? d === "LONG"
-                      ? "bg-long text-bg"
-                      : "bg-short text-bg"
-                    : "bg-surface text-text-secondary hover:text-text"
-                )}
-              >
-                {d}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div>
-          <label className={label}>Status</label>
-          <select value={form.status} onChange={set("status")} className={field}>
-            <option value="OPEN">Open</option>
-            <option value="CLOSED">Closed</option>
-            <option value="CANCELLED">Cancelled</option>
+        </Field>
+        <Field label="Direction" required>
+          <select className={field} value={values.direction} onChange={(e) => set("direction", e.target.value as "LONG" | "SHORT")}>
+            <option value="LONG">Long</option>
+            <option value="SHORT">Short</option>
           </select>
-        </div>
-        <div>
-          <label className={label}>Session</label>
-          <select value={form.session} onChange={set("session")} className={field}>
+        </Field>
+        <Field label="Session">
+          <select className={field} value={values.session} onChange={(e) => set("session", e.target.value)}>
             <option value="">—</option>
-            {["ASIA", "LONDON", "NEW_YORK", "INDIA", "OVERLAP", "OTHER"].map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
+            {SESSIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
           </select>
-        </div>
-        <div>
-          <label className={label}>Account</label>
-          <select value={form.accountId} onChange={set("accountId")} className={field}>
+        </Field>
+        <Field label="Opened" required>
+          <input type="datetime-local" className={field} value={values.openedAt} onChange={(e) => set("openedAt", e.target.value)} />
+        </Field>
+        <Field label="Closed" required>
+          <input type="datetime-local" className={field} value={values.closedAt} onChange={(e) => set("closedAt", e.target.value)} />
+        </Field>
+        <Field label="Entry" required>
+          <input type="number" step="any" className={field} value={values.entryPrice} onChange={(e) => set("entryPrice", e.target.value)} />
+        </Field>
+        <Field label="Exit" required>
+          <input type="number" step="any" className={field} value={values.exitPrice} onChange={(e) => set("exitPrice", e.target.value)} />
+        </Field>
+        <Field label="Size">
+          <input type="number" step="any" className={field} value={values.positionSize} onChange={(e) => set("positionSize", e.target.value)} />
+        </Field>
+        <Field label="SL amount ($)">
+          <input type="number" step="any" className={field} value={values.stopAmount} onChange={(e) => set("stopAmount", e.target.value)} placeholder="Risk $" />
+        </Field>
+        <Field label="TP amount ($)">
+          <input type="number" step="any" className={field} value={values.targetAmount} onChange={(e) => set("targetAmount", e.target.value)} placeholder="Target $" />
+        </Field>
+        <Field label="Fees">
+          <input type="number" step="any" className={field} value={values.feesCommission} onChange={(e) => set("feesCommission", e.target.value)} />
+        </Field>
+        <Field label="Execution grade">
+          <select className={field} value={values.executionGrade} onChange={(e) => set("executionGrade", e.target.value)}>
             <option value="">—</option>
-            {accounts.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
-            ))}
+            {[1, 2, 3, 4, 5].map((g) => <option key={g} value={g}>{g} / 5</option>)}
           </select>
-        </div>
-        <div>
-          <label className={label}>Setup</label>
-          <select value={form.setupId} onChange={set("setupId")} className={field}>
-            <option value="">—</option>
-            {setups.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className={label}>Opened</label>
-          <input type="datetime-local" value={form.openedAt} onChange={set("openedAt")} className={field} required />
-        </div>
-        <div>
-          <label className={label}>Closed</label>
-          <input type="datetime-local" value={form.closedAt} onChange={set("closedAt")} className={field} />
-        </div>
-      </fieldset>
-
-      {/* Prices */}
-      <fieldset className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <div>
-          <label className={label}>Entry</label>
-          <input type="number" step="any" required value={form.entryPrice} onChange={set("entryPrice")} className={field} />
-        </div>
-        <div>
-          <label className={label}>Stop loss</label>
-          <input type="number" step="any" value={form.stopLoss} onChange={set("stopLoss")} className={field} />
-        </div>
-        <div>
-          <label className={label}>Take profit</label>
-          <input type="number" step="any" value={form.takeProfit} onChange={set("takeProfit")} className={field} />
-        </div>
-        <div>
-          <label className={label}>Exit</label>
-          <input type="number" step="any" value={form.exitPrice} onChange={set("exitPrice")} className={field} />
-        </div>
-        <div>
-          <label className={label}>Size</label>
-          <input type="number" step="any" min="0" required value={form.positionSize} onChange={set("positionSize")} className={field} />
-        </div>
-      </fieldset>
-
-      {/* Live risk preview */}
-      <div className="flex flex-wrap gap-6 border border-border bg-bg px-4 py-3 font-mono text-xs text-text-secondary">
-        <span>
-          Planned risk: <span className="numeric text-text">{plannedRisk !== null ? plannedRisk.toFixed(2) + " " + form.currency : "—"}</span>
-        </span>
-        <span>
-          Planned R:R: <span className="numeric text-text">{plannedRR !== null ? `1:${plannedRR.toFixed(2)}` : "—"}</span>
-        </span>
-        <span>
-          Point value: <span className="numeric text-text-faint">{pv}</span>
-        </span>
+        </Field>
       </div>
 
-      {/* Journal narrative */}
-      <fieldset className="grid gap-4 lg:grid-cols-2">
-        {(
-          [
-            ["thesis", "Thesis / hypothesis"],
-            ["executionNotes", "Execution notes"],
-            ["emotionalNotes", "Emotional state"],
-            ["mistakes", "Mistakes"],
-            ["lessons", "Lessons"],
-          ] as const
-        ).map(([k, l]) => (
-          <div key={k} className={k === "thesis" ? "lg:col-span-2" : ""}>
-            <label className={label}>{l}</label>
-            <textarea value={form[k]} onChange={set(k)} rows={k === "thesis" ? 3 : 2} className={cn(field, "resize-y")} />
+      <div className="flex items-center gap-3">
+        <span className="micro-label">Rule compliant</span>
+        {([true, false, null] as const).map((v) => (
+          <button key={String(v)} type="button" onClick={() => set("ruleCompliant", v)}
+            className={cn("border px-3 py-1 font-mono text-[10px] uppercase tracking-[0.14em] transition-colors",
+              values.ruleCompliant === v ? "border-accent text-accent-text" : "border-border text-text-secondary hover:border-border-strong")}>
+            {v === true ? "Yes" : v === false ? "No" : "—"}
+          </button>
+        ))}
+      </div>
+
+      {/* Live P&L + R preview */}
+      <div className="grid gap-px border border-border bg-border sm:grid-cols-3">
+        {[
+          { l: "Net P&L", v: preview ? formatCurrency(preview.net) : "—", tone: preview && preview.net < 0 ? "text-short" : "text-long" },
+          { l: "Realized R", v: preview?.r != null ? `${preview.r.toFixed(2)}R` : "—", tone: preview?.r != null && preview.r < 0 ? "text-short" : "text-text" },
+          { l: "Planned R:R", v: preview?.rr != null ? `1 : ${preview.rr.toFixed(1)}` : "—", tone: "text-text" },
+        ].map((s) => (
+          <div key={s.l} className="bg-bg-elevated px-4 py-3">
+            <p className="micro-label mb-1">{s.l}</p>
+            <p className={cn("numeric text-xl", s.tone)}>{s.v}</p>
           </div>
         ))}
-      </fieldset>
-
-      <fieldset className="grid gap-4 sm:grid-cols-3">
-        <div>
-          <label className={label}>Execution grade (1–5)</label>
-          <select value={form.executionGrade} onChange={set("executionGrade")} className={field}>
-            <option value="">—</option>
-            {[1, 2, 3, 4, 5].map((g) => (
-              <option key={g} value={g}>
-                {g}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className={label}>Rule compliant</label>
-          <select value={form.ruleCompliant} onChange={set("ruleCompliant")} className={field}>
-            <option value="">—</option>
-            <option value="true">Yes</option>
-            <option value="false">No</option>
-          </select>
-        </div>
-        <div>
-          <label className={label}>Fees / commissions</label>
-          <input type="number" step="any" min="0" value={form.feesCommission} onChange={set("feesCommission")} className={field} />
-        </div>
-      </fieldset>
-
-      {error && (
-        <p role="alert" className="border border-short/40 bg-short/10 px-3 py-2 text-sm text-short">
-          {error}
-        </p>
-      )}
-
-      <div className="flex gap-3">
-        <button
-          type="submit"
-          disabled={saving}
-          className="border border-accent bg-accent px-8 py-3 font-mono text-xs uppercase tracking-[0.16em] text-bg transition-colors hover:bg-accent-text disabled:opacity-50"
-        >
-          {saving ? "Saving…" : trade ? "Update trade" : "Log trade"}
-        </button>
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="border border-border-strong px-6 py-3 font-mono text-xs uppercase tracking-[0.16em] text-text-secondary hover:border-accent"
-        >
-          Cancel
-        </button>
       </div>
-    </form>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Thesis"><textarea rows={4} className={cn(field, "resize-y")} value={values.thesis} onChange={(e) => set("thesis", e.target.value)} /></Field>
+        <Field label="Execution notes"><textarea rows={4} className={cn(field, "resize-y")} value={values.executionNotes} onChange={(e) => set("executionNotes", e.target.value)} /></Field>
+        <Field label="Emotional notes"><textarea rows={3} className={cn(field, "resize-y")} value={values.emotionalNotes} onChange={(e) => set("emotionalNotes", e.target.value)} /></Field>
+        <div className="grid gap-4">
+          <Field label="Mistakes"><textarea rows={3} className={cn(field, "resize-y")} value={values.mistakes} onChange={(e) => set("mistakes", e.target.value)} /></Field>
+          <Field label="Lessons"><textarea rows={3} className={cn(field, "resize-y")} value={values.lessons} onChange={(e) => set("lessons", e.target.value)} /></Field>
+        </div>
+      </div>
+
+      {error && <p className="text-sm text-short">{error}</p>}
+      <div className="flex gap-3">
+        <Button variant="primary" disabled={pending} onClick={submit}>
+          {pending ? "Saving…" : trade ? "Save changes" : "Log trade"}
+        </Button>
+        <Button variant="ghost" onClick={() => router.back()}>Cancel</Button>
+      </div>
+    </div>
   );
 }

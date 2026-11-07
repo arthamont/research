@@ -152,7 +152,7 @@ const planSchema = z.object({
   date: z.string().min(1),
   narrative: z.string().optional().nullable(),
   marketFocus: z.array(z.enum(["FUTURES", "FOREX", "INDIA"])).default([]),
-  sessionFocus: z.array(z.enum(["ASIA", "LONDON", "NEW_YORK", "INDIA", "OVERLAP", "OTHER"])).default([]),
+  sessionFocus: z.array(z.enum(["Q1", "Q2", "Q3", "Q4"])).default([]),
   keyLevels: z.string().optional().nullable(), // "SYM:price:note" lines
   scenarios: z.string().optional().nullable(), // "label:condition:action" lines
   sleep: z.string().optional().nullable(),
@@ -365,7 +365,7 @@ const caseSchema = z.object({
   market: z.enum(["FUTURES", "FOREX", "INDIA"]),
   instrument: z.string().min(1),
   direction: z.enum(["LONG", "SHORT"]),
-  session: z.enum(["ASIA", "LONDON", "NEW_YORK", "INDIA", "OVERLAP", "OTHER"]).optional().nullable(),
+  session: z.enum(["Q1", "Q2", "Q3", "Q4"]).optional().nullable(),
   setup: z.string().optional().nullable(),
   tradeDate: z.string().min(1),
   rrPlanned: z.coerce.number().optional().nullable(),

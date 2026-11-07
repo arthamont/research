@@ -33,12 +33,10 @@ enum TradeStatus {
 }
 
 enum TradingSession {
-  ASIA
-  LONDON
-  NEW_YORK
-  INDIA
-  OVERLAP
-  OTHER
+  Q1 // Asia
+  Q2 // London
+  Q3 // New York AM
+  Q4 // New York PM
 }
 
 enum PublishStatus {
@@ -258,7 +256,8 @@ model Trade {
   feesCommission Decimal @default(0) @db.Decimal(14, 4)
   grossPnl       Decimal? @db.Decimal(14, 4)
   netPnl         Decimal? @db.Decimal(14, 4)
-  plannedRisk    Decimal? @db.Decimal(14, 4) // currency amount risked as planned
+  plannedRisk    Decimal? @db.Decimal(14, 4) // SL amount in currency — entered directly
+  plannedTarget  Decimal? @db.Decimal(14, 4) // TP amount in currency — entered directly
   realizedR      Decimal? @db.Decimal(10, 3)
 
   // Journal narrative

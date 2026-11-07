@@ -5,24 +5,25 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/require-user";
-import { settleTrade, computePlannedRR } from "@/lib/calculations";
+import { computeGrossPnl, computeRealizedR } from "@/lib/calculations";
 import { slugify } from "@/lib/utils";
 
+/**
+ * Trades are logged only when complete — always CLOSED.
+ * Session uses the owner's Quarterly frame: Q1 Asia, Q2 London, Q3 NY AM, Q4 NY PM.
+ * Risk/target are entered as currency amounts ($), not prices.
+ */
 const tradeSchema = z.object({
-  accountId: z.string().optional().nullable(),
   instrumentId: z.string().min(1, "Instrument required"),
-  setupId: z.string().optional().nullable(),
-  market: z.enum(["FUTURES", "FOREX", "INDIA"]),
   direction: z.enum(["LONG", "SHORT"]),
-  status: z.enum(["OPEN", "CLOSED", "CANCELLED"]).default("OPEN"),
-  session: z.enum(["ASIA", "LONDON", "NEW_YORK", "INDIA", "OVERLAP", "OTHER"]).optional().nullable(),
+  session: z.enum(["Q1", "Q2", "Q3", "Q4"]).optional().nullable(),
   openedAt: z.string().min(1, "Open time required"),
-  closedAt: z.string().optional().nullable(),
+  closedAt: z.string().min(1, "Close time required"),
   entryPrice: z.coerce.number().positive(),
-  stopLoss: z.coerce.number().positive().optional().nullable(),
-  takeProfit: z.coerce.number().positive().optional().nullable(),
-  exitPrice: z.coerce.number().positive().optional().nullable(),
+  exitPrice: z.coerce.number().positive(),
   positionSize: z.coerce.number().positive().default(1),
+  stopAmount: z.coerce.number().positive().optional().nullable(), // SL $
+  targetAmount: z.coerce.number().positive().optional().nullable(), // TP $
   currency: z.string().default("USD"),
   feesCommission: z.coerce.number().min(0).default(0),
   thesis: z.string().optional().nullable(),
@@ -34,7 +35,24 @@ const tradeSchema = z.object({
   ruleCompliant: z.coerce.boolean().optional().nullable(),
 });
 
-const dateOrNull = (s?: string | null) => (s ? new Date(s) : null);
+async function settle(d: z.infer<typeof tradeSchema>, instrument: { pointValue: unknown }) {
+  const grossPnl = computeGrossPnl({
+    direction: d.direction,
+    entry: d.entryPrice,
+    exit: d.exitPrice,
+    positionSize: d.positionSize,
+    pointValue: Number(instrument.pointValue),
+  });
+  const netPnl = grossPnl - d.feesCommission;
+  const plannedRisk = d.stopAmount ?? null;
+  return {
+    grossPnl,
+    netPnl,
+    plannedRisk,
+    plannedTarget: d.targetAmount ?? null,
+    realizedR: computeRealizedR(netPnl, plannedRisk),
+  };
+}
 
 export async function createTrade(formData: unknown): Promise<{ error?: string; id?: string }> {
   const user = await requireUser();
@@ -44,48 +62,28 @@ export async function createTrade(formData: unknown): Promise<{ error?: string; 
 
   const instrument = await db.instrument.findUnique({ where: { id: d.instrumentId } });
   if (!instrument) return { error: "Instrument not found" };
-
-  const fees = d.feesCommission;
-  const settled = d.status === "CLOSED" || d.exitPrice
-    ? settleTrade({
-        direction: d.direction,
-        entryPrice: d.entryPrice,
-        exitPrice: d.exitPrice ?? null,
-        stopLoss: d.stopLoss ?? null,
-        positionSize: d.positionSize,
-        fees,
-        instrument,
-      })
-    : {
-        grossPnl: null,
-        netPnl: null,
-        plannedRisk: null,
-        realizedR: null,
-      };
+  const s = await settle(d, instrument);
 
   const trade = await db.trade.create({
     data: {
       userId: user.id,
-      accountId: d.accountId || null,
       instrumentId: d.instrumentId,
-      setupId: d.setupId || null,
       market: instrument.market,
       direction: d.direction,
-      status: d.status,
+      status: "CLOSED",
       session: d.session || null,
       openedAt: new Date(d.openedAt),
-      closedAt: dateOrNull(d.closedAt),
+      closedAt: new Date(d.closedAt),
       entryPrice: d.entryPrice,
-      stopLoss: d.stopLoss ?? null,
-      takeProfit: d.takeProfit ?? null,
-      exitPrice: d.exitPrice ?? null,
+      exitPrice: d.exitPrice,
       positionSize: d.positionSize,
       currency: d.currency,
-      feesCommission: fees,
-      grossPnl: settled.grossPnl,
-      netPnl: settled.netPnl,
-      plannedRisk: settled.plannedRisk,
-      realizedR: settled.realizedR,
+      feesCommission: d.feesCommission,
+      grossPnl: s.grossPnl,
+      netPnl: s.netPnl,
+      plannedRisk: s.plannedRisk,
+      plannedTarget: s.plannedTarget,
+      realizedR: s.realizedR,
       thesis: d.thesis,
       executionNotes: d.executionNotes,
       emotionalNotes: d.emotionalNotes,
@@ -111,43 +109,28 @@ export async function updateTrade(id: string, formData: unknown): Promise<{ erro
 
   const instrument = await db.instrument.findUnique({ where: { id: d.instrumentId } });
   if (!instrument) return { error: "Instrument not found" };
-
-  const fees = d.feesCommission;
-  const settled = d.status === "CLOSED" || d.exitPrice
-    ? settleTrade({
-        direction: d.direction,
-        entryPrice: d.entryPrice,
-        exitPrice: d.exitPrice ?? null,
-        stopLoss: d.stopLoss ?? null,
-        positionSize: d.positionSize,
-        fees,
-        instrument,
-      })
-    : { grossPnl: null, netPnl: null, plannedRisk: null, realizedR: null };
+  const s = await settle(d, instrument);
 
   await db.trade.update({
     where: { id },
     data: {
-      accountId: d.accountId || null,
       instrumentId: d.instrumentId,
-      setupId: d.setupId || null,
       market: instrument.market,
       direction: d.direction,
-      status: d.status,
+      status: "CLOSED",
       session: d.session || null,
       openedAt: new Date(d.openedAt),
-      closedAt: dateOrNull(d.closedAt),
+      closedAt: new Date(d.closedAt),
       entryPrice: d.entryPrice,
-      stopLoss: d.stopLoss ?? null,
-      takeProfit: d.takeProfit ?? null,
-      exitPrice: d.exitPrice ?? null,
+      exitPrice: d.exitPrice,
       positionSize: d.positionSize,
       currency: d.currency,
-      feesCommission: fees,
-      grossPnl: settled.grossPnl,
-      netPnl: settled.netPnl,
-      plannedRisk: settled.plannedRisk,
-      realizedR: settled.realizedR,
+      feesCommission: d.feesCommission,
+      grossPnl: s.grossPnl,
+      netPnl: s.netPnl,
+      plannedRisk: s.plannedRisk,
+      plannedTarget: s.plannedTarget,
+      realizedR: s.realizedR,
       thesis: d.thesis,
       executionNotes: d.executionNotes,
       emotionalNotes: d.emotionalNotes,
@@ -185,5 +168,3 @@ export async function toggleTradePublic(id: string) {
   });
   revalidatePath("/dashboard/journal");
 }
-
-export { computePlannedRR };

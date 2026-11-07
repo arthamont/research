@@ -13,11 +13,9 @@ export const dynamic = "force-dynamic";
 export default async function TradeDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser();
   const { id } = await params;
-  const [trade, instruments, accounts, setups] = await Promise.all([
+  const [trade, instruments] = await Promise.all([
     db.trade.findFirst({ where: { id, userId: user.id }, include: { instrument: true, setup: true, screenshots: true } }),
     db.instrument.findMany({ where: { isActive: true }, orderBy: { symbol: "asc" } }),
-    db.tradingAccount.findMany({ where: { userId: user.id, isActive: true } }),
-    db.setup.findMany({ where: { userId: user.id }, orderBy: { name: "asc" } }),
   ]);
   if (!trade) notFound();
 
@@ -75,7 +73,7 @@ export default async function TradeDetailPage({ params }: { params: Promise<{ id
       </Widget>
 
       <Widget title="Edit trade">
-        <TradeForm instruments={instruments} accounts={accounts} setups={setups} trade={trade} />
+        <TradeForm instruments={instruments} trade={trade} />
       </Widget>
     </>
   );

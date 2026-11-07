@@ -104,7 +104,7 @@ function PlanForm({ date, plan }: { date: string; plan: TradingPlan | null }) {
         <div>
           <label className={lbl}>Session focus</label>
           <div className="flex flex-wrap gap-2">
-            {["ASIA", "LONDON", "NEW_YORK", "INDIA"].map((s) => (
+            {["Q1", "Q2", "Q3", "Q4"].map((s) => (
               <button
                 key={s}
                 type="button"
