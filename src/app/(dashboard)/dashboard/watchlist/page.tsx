@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/require-user";
+import { getInstruments } from "@/lib/cached";
 import { PageHeader } from "@/components/dashboard/widgets";
 import { WatchlistManager } from "@/components/dashboard/watchlist-manager";
 
@@ -9,7 +10,7 @@ export default async function WatchlistPage() {
   const user = await requireUser();
   const [items, instruments] = await Promise.all([
     db.watchlistItem.findMany({ where: { userId: user.id }, include: { instrument: true }, orderBy: { updatedAt: "desc" } }),
-    db.instrument.findMany({ where: { isActive: true }, orderBy: { symbol: "asc" } }),
+    getInstruments(),
   ]);
 
   return (

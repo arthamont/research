@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { requireUser } from "@/lib/require-user";
 import { slugify, readingTimeMinutes } from "@/lib/utils";
 import { utcDay } from "@/lib/dates";
+import { bustWorkspaceCache } from "@/lib/cached";
 
 /* ── Settings ─────────────────────────────────────────────────────────── */
 
@@ -60,6 +61,7 @@ export async function updateSettings(data: unknown) {
       socialLinks: social,
     },
   });
+  bustWorkspaceCache();
   revalidatePath("/dashboard/settings");
   revalidatePath("/about");
   return {};
@@ -90,6 +92,7 @@ export async function upsertSetup(id: string | null, data: unknown) {
 export async function deleteSetup(id: string) {
   const user = await requireUser();
   await db.setup.deleteMany({ where: { id, userId: user.id } });
+  bustWorkspaceCache();
   revalidatePath("/dashboard/playbook");
 }
 

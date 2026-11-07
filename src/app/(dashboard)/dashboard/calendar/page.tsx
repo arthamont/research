@@ -5,6 +5,8 @@ import { requireUser } from "@/lib/require-user";
 import { PageHeader, Widget } from "@/components/dashboard/widgets";
 import { Tag } from "@/components/ui/primitives";
 import { formatCurrency, formatR } from "@/lib/utils";
+import { Suspense } from "react";
+import { DashboardSkeleton } from "@/components/dashboard/skeleton";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +16,7 @@ const METRICS = [
   { id: "adherence", label: "Adherence" },
 ] as const;
 
-export default async function CalendarPage({
+async function CalendarPageData({
   searchParams,
 }: {
   searchParams: Promise<{ month?: string; day?: string; metric?: string; market?: string }>;
@@ -229,5 +231,13 @@ export default async function CalendarPage({
         </Widget>
       </div>
     </>
+  );
+}
+
+export default function CalendarPageWrapper(props: Parameters<typeof CalendarPageData>[0]) {
+  return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <CalendarPageData {...props} />
+    </Suspense>
   );
 }

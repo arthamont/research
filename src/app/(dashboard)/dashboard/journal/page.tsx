@@ -5,12 +5,14 @@ import { PageHeader, Widget } from "@/components/dashboard/widgets";
 import { ButtonLink, EmptyState } from "@/components/ui/primitives";
 import { formatDate, formatR, formatCurrency } from "@/lib/utils";
 import type { Market } from "@prisma/client";
+import { Suspense } from "react";
+import { DashboardSkeleton } from "@/components/dashboard/skeleton";
 
 export const dynamic = "force-dynamic";
 
 const MARKETS: Market[] = ["FUTURES", "FOREX", "INDIA"];
 
-export default async function JournalPage({ searchParams }: { searchParams: Promise<{ market?: string; status?: string }> }) {
+async function JournalPageData({ searchParams }: { searchParams: Promise<{ market?: string; status?: string }> }) {
   const user = await requireUser();
   const params = await searchParams;
   const market = MARKETS.find((m) => m === params.market);
@@ -93,5 +95,13 @@ export default async function JournalPage({ searchParams }: { searchParams: Prom
         </Widget>
       )}
     </>
+  );
+}
+
+export default function JournalPageWrapper(props: Parameters<typeof JournalPageData>[0]) {
+  return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <JournalPageData {...props} />
+    </Suspense>
   );
 }

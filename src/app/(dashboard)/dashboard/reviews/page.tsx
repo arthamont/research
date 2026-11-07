@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/require-user";
 import { PageHeader } from "@/components/dashboard/widgets";
 import { ReviewsManager } from "@/components/dashboard/reviews-manager";
 import { utcDay, localTodayStr } from "@/lib/dates";
+import { getChecklistTemplates } from "@/lib/cached";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +24,7 @@ export default async function ReviewsPage({ searchParams }: { searchParams: Prom
 
   const [plan, templates, entries, dailyReview, weeklyReview, history] = await Promise.all([
     db.tradingPlan.findUnique({ where: { userId_date: { userId: user.id, date: selected } } }),
-    db.checklistTemplate.findMany({ where: { userId: user.id }, orderBy: { sortOrder: "asc" } }),
+    getChecklistTemplates(user.id),
     db.checklistEntry.findMany({ where: { userId: user.id, date: selected } }),
     db.dailyReview.findUnique({ where: { userId_date: { userId: user.id, date: selected } } }),
     db.weeklyReview.findUnique({ where: { userId_weekStart: { userId: user.id, weekStart } } }),

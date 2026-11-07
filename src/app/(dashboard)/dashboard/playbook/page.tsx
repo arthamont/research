@@ -1,5 +1,5 @@
-import { db } from "@/lib/db";
 import { requireUser } from "@/lib/require-user";
+import { getSetups } from "@/lib/cached";
 import { PageHeader } from "@/components/dashboard/widgets";
 import { SetupManager } from "@/components/dashboard/setup-manager";
 
@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export default async function PlaybookDashPage() {
   const user = await requireUser();
-  const setups = await db.setup.findMany({ where: { userId: user.id }, orderBy: { name: "asc" } });
+  const setups = await getSetups(user.id);
 
   return (
     <>

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/require-user";
+import { getInstruments } from "@/lib/cached";
 import { PageHeader, Widget, Metric } from "@/components/dashboard/widgets";
 import { TradeForm } from "@/components/dashboard/trade-form";
 import { PublishToggle, DeleteTradeButton } from "@/components/dashboard/trade-actions";
@@ -15,7 +16,7 @@ export default async function TradeDetailPage({ params }: { params: Promise<{ id
   const { id } = await params;
   const [trade, instruments] = await Promise.all([
     db.trade.findFirst({ where: { id, userId: user.id }, include: { instrument: true, setup: true, screenshots: true } }),
-    db.instrument.findMany({ where: { isActive: true }, orderBy: { symbol: "asc" } }),
+    getInstruments(),
   ]);
   if (!trade) notFound();
 

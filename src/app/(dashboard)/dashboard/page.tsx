@@ -4,15 +4,18 @@ import { requireUser } from "@/lib/require-user";
 import { getSessionStatuses } from "@/lib/sessions";
 import { fetchEconCalendar } from "@/lib/econ-calendar";
 import { utcDay, localTodayStr, localMidnight } from "@/lib/dates";
+import { getUserSettings } from "@/lib/cached";
 import { SessionMonitor } from "@/components/dashboard/session-monitor";
 import { Widget, Metric, PageHeader } from "@/components/dashboard/widgets";
 import { ButtonLink, Tag } from "@/components/ui/primitives";
 import { formatDate, formatR, formatCurrency } from "@/lib/utils";
 import { toClosedTrade, analyze } from "@/lib/analytics";
+import { Suspense } from "react";
+import { DashboardSkeleton } from "@/components/dashboard/skeleton";
 
 export const dynamic = "force-dynamic";
 
-export default async function DashboardPage() {
+async function DashboardPageData() {
   const user = await requireUser();
   const today = localMidnight();
   const todayKey = utcDay(localTodayStr())!;
@@ -24,7 +27,7 @@ export default async function DashboardPage() {
 
   const [settings, plan, todayTrades, recentTrades, events, checklistEntries, closedTrades, watchlist, dayNote] =
     await Promise.all([
-      db.userSettings.findUnique({ where: { userId: user.id } }),
+      getUserSettings(user.id),
       db.tradingPlan.findUnique({ where: { userId_date: { userId: user.id, date: todayKey } } }),
       db.trade.findMany({ where: { userId: user.id, openedAt: { gte: today } }, include: { instrument: true } }),
       db.trade.findMany({
@@ -257,5 +260,13 @@ export default async function DashboardPage() {
         )}
       </Widget>
     </>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <DashboardPageData />
+    </Suspense>
   );
 }

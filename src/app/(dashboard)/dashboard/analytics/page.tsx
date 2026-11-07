@@ -5,6 +5,8 @@ import { EquityChart } from "@/components/dashboard/equity-chart";
 import { EmptyState } from "@/components/ui/primitives";
 import { analyze, groupAnalytics, toClosedTrade } from "@/lib/analytics";
 import { formatCurrency, formatNumber, formatR } from "@/lib/utils";
+import { Suspense } from "react";
+import { DashboardSkeleton } from "@/components/dashboard/skeleton";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +40,7 @@ function GroupTable({ title, rows }: { title: string; rows: { name: string; coun
   );
 }
 
-export default async function AnalyticsPage() {
+async function AnalyticsPageData() {
   const user = await requireUser();
   const trades = await db.trade.findMany({
     where: { userId: user.id, status: "CLOSED" },
@@ -94,5 +96,13 @@ export default async function AnalyticsPage() {
         per-instrument point values — see <span className="font-mono">lib/calculations.ts</span>.
       </p>
     </>
+  );
+}
+
+export default function AnalyticsPage() {
+  return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <AnalyticsPageData />
+    </Suspense>
   );
 }
