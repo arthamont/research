@@ -15,13 +15,35 @@ export async function ResearchSection() {
     <section className="border-t border-border">
       <div className="mx-auto max-w-7xl px-5 py-24 sm:px-8 lg:py-36">
         <RevealText>
-          <SectionHeading index="06" kicker="Research" title={<>The market,<br />through my lens.</>} />
+          <SectionHeading index="07" kicker="Arthamont Research" title={<>Perspectives that<br />matter.</>} />
         </RevealText>
+        <Reveal delay={0.15}>
+          <p className="mt-6 max-w-xl text-base leading-relaxed text-text-secondary">
+            Markets are constantly evolving. Our research documents the ideas, observations, and analytical
+            frameworks shaping our perspective — market outlooks, technical studies, macroeconomic developments, and
+            detailed trading case studies.
+          </p>
+        </Reveal>
+        <Reveal delay={0.2}>
+          <div className="mt-10 grid gap-px border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              { t: "Market Outlooks", b: "Weekly perspectives on major financial markets." },
+              { t: "Market Structure", b: "Studies of liquidity, price behavior, and market dynamics." },
+              { t: "Trade Case Studies", b: "Documented decisions, execution reviews, and lessons." },
+              { t: "Macroeconomic Insights", b: "Analysis of important economic events and their potential market implications." },
+            ].map((c) => (
+              <div key={c.t} className="bg-bg p-6">
+                <p className="micro-label">{c.t}</p>
+                <p className="mt-3 text-xs leading-relaxed text-text-secondary">{c.b}</p>
+              </div>
+            ))}
+          </div>
+        </Reveal>
 
         {articles.length === 0 ? (
           <Reveal delay={0.2} className="mt-16">
             <EmptyState
-              title="No published research yet"
+              title="Latest published research articles will appear here automatically."
               hint="Weekly outlooks and market-structure studies will appear here once published."
             />
           </Reveal>
@@ -62,7 +84,7 @@ export async function ResearchSection() {
 
         <Reveal delay={0.25} className="mt-12">
           <ButtonLink href="/outlook" variant="secondary">
-            Read the outlook
+            Explore all research
           </ButtonLink>
         </Reveal>
       </div>

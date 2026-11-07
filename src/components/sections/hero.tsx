@@ -18,14 +18,14 @@ export interface HeroContent {
 }
 
 const DEFAULTS: Required<HeroContent> = {
-  eyebrow: "Conviction. Discipline. Longevity.",
+  eyebrow: "Arthamont / Capital Markets & Research",
   line1: "Built on principle.",
   line2: "Defined by time.",
-  lede: "An independent pursuit of disciplined trading, rigorous market research, and long-term capital stewardship.",
-  cta1Label: "Explore our philosophy",
-  cta2Label: "Discover our research",
-  strip: "Futures / Global markets / Research",
-  note: "An independent trading and research initiative with a long-term institutional vision.",
+  lede: "A research-driven financial initiative focused on global capital markets, disciplined decision-making, and the pursuit of long-term value.",
+  cta1Label: "Explore Arthamont",
+  cta2Label: "Our Research",
+  strip: "US Futures / Global Forex / Indian Markets",
+  note: "Built with conviction. Guided by discipline. Focused on the future.",
 };
 
 function Line({ delay, d }: { delay: number; d: string }) {

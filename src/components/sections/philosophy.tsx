@@ -2,11 +2,9 @@ import { Reveal, RevealText } from "@/components/motion/reveal";
 import { SectionHeading, MicroLabel } from "@/components/ui/primitives";
 
 const principles = [
-  { n: "01", title: "Patience", body: "No trade is better than a forced trade." },
-  { n: "02", title: "Precision", body: "A defined setup. A clear invalidation. A planned outcome." },
-  { n: "03", title: "Risk", body: "Capital preservation comes before opportunity." },
-  { n: "04", title: "Discipline", body: "Execution is measured by adherence to process, not a single result." },
-  { n: "05", title: "Reflection", body: "Every trade is information. Every review is an opportunity to improve." },
+  { n: "01", title: "Conviction", sub: "Think Independently.", body: "We believe meaningful decisions begin with rigorous research, independent judgment, and the confidence to act on a well-defined process." },
+  { n: "02", title: "Discipline", sub: "Execute with Purpose.", body: "Risk management, preparation, and consistency form the foundation of every market decision." },
+  { n: "03", title: "Longevity", sub: "Build Beyond Today.", body: "Our perspective extends beyond individual trades and market cycles, prioritizing continuous development, responsible decision-making, and long-term resilience." },
 ];
 
 const measures = [
@@ -35,18 +33,17 @@ export function PhilosophySection() {
           <div>
             <div className="lg:sticky lg:top-28">
               <RevealText>
-                <SectionHeading index="03" kicker="Philosophy" title={<>The edge is not<br />in the noise.</>} />
+                <SectionHeading index="05" kicker="The Principles That Define Us" title={<>Conviction.<br />Discipline.<br />Longevity.</>} />
               </RevealText>
               <Reveal delay={0.15}>
-                <p className="mt-10 border-l-2 border-accent pl-6 text-xl leading-relaxed text-text sm:text-2xl">
-                  Preparation creates clarity.<br />
-                  Discipline governs execution.<br />
-                  Consistency is built one decision at a time.
+                <p className="font-display mt-10 border-l-2 border-accent pl-6 text-xl leading-relaxed text-text sm:text-2xl">
+                  Principles guide decisions.<br />
+                  Time reveals their value.
                 </p>
               </Reveal>
               <Reveal delay={0.25}>
                 <p className="mt-8 max-w-md font-mono text-[11px] uppercase leading-relaxed tracking-[0.18em] text-text-faint">
-                  Five operating rules — the same ones, every session, every market.
+                  Three principles — the same ones, every session, every market.
                 </p>
               </Reveal>
             </div>
@@ -66,9 +63,10 @@ export function PhilosophySection() {
                   </span>
                   <div className="relative max-w-lg">
                     <p className="numeric font-mono text-xs tracking-[0.2em] text-accent">{p.n}</p>
-                    <h3 className="display-xl mt-4 text-3xl sm:text-4xl">
-                      <span className="transition-colors duration-300 group-hover:text-accent-text">{p.title}</span>
+                    <h3 className="font-display mt-4 text-3xl font-medium sm:text-4xl">
+                      <span className="transition-colors duration-300 group-hover:text-accent-text">{p.title}.</span>
                     </h3>
+                    <p className="micro-label mt-3">{p.sub}</p>
                     <p className="mt-4 text-base leading-relaxed text-text-secondary">{p.body}</p>
                   </div>
                   {/* hover underline accent */}

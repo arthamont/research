@@ -3,20 +3,21 @@ import { Wordmark } from "@/components/brand/wordmark";
 
 const cols = [
   {
-    title: "Navigate",
+    title: "Explore",
     links: [
       { href: "/markets", label: "Markets" },
-      { href: "/journal", label: "Journal" },
-      { href: "/outlook", label: "Outlook" },
+      { href: "/outlook", label: "Research & Outlook" },
+      { href: "/journal", label: "Trading Journal" },
       { href: "/playbook", label: "Playbook" },
     ],
   },
   {
     title: "Arthamont",
     links: [
-      { href: "/about", label: "About" },
+      { href: "/about", label: "About Us" },
+      { href: "/about", label: "Our Vision" },
       { href: "/workspace", label: "Workspace" },
-      { href: "/login", label: "Sign in" },
+      { href: "/login", label: "Sign In" },
     ],
   },
 ];
@@ -30,8 +31,8 @@ export function Footer() {
             <Wordmark className="text-2xl" />
             <p className="micro-label">Conviction · Discipline · Longevity</p>
             <p className="max-w-sm text-xs leading-relaxed text-text-faint">
-              Arthamont Research — an independent trading and research initiative across US futures, global markets,
-              and Indian markets.
+              A research-driven financial initiative focused on global capital markets, disciplined market
+              strategies, and a long-term institutional vision.
             </p>
           </div>
           <div className="grid grid-cols-2 gap-12">
@@ -53,12 +54,13 @@ export function Footer() {
         </div>
         <div className="mt-14 flex flex-col gap-3 border-t border-border pt-6 text-[11px] leading-relaxed text-text-faint">
           <p>
-            Trading involves substantial risk of loss. All content on this site is personal research and opinion, shared
-            for documentation purposes only — it is not financial advice, investment advice, or a solicitation to trade.
+            Trading and investing involve substantial risk of loss. All information presented is for research,
+            educational, and informational purposes only and does not constitute investment advice, an offer to
+            manage funds, or a solicitation to trade.
           </p>
           <div className="flex items-center justify-between">
-            <span>© {new Date().getFullYear()} ARTHAMONT</span>
-            <span className="numeric">CONVICTION. DISCIPLINE. LONGEVITY.</span>
+            <span>© {new Date().getFullYear()} ARTHAMONT. All rights reserved.</span>
+            <span className="numeric">BUILT ON PRINCIPLE. DEFINED BY TIME.</span>
           </div>
         </div>
       </div>

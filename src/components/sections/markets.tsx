@@ -7,25 +7,28 @@ const markets = [
     index: "01",
     name: "US Futures",
     href: "/markets/futures",
+    tagline: "Global Indices. Market Structure. Liquidity.",
     instruments: ["NQ — Nasdaq-100 Futures", "ES — S&P 500 Futures"],
-    focus: "Index futures across the New York session — structure, liquidity, and session profiles.",
-    session: "New York · 09:30 ET open",
+    focus: "Research focused on US equity index futures, including Nasdaq-100 and S&P 500 futures, with an emphasis on market structure, liquidity, and session dynamics.",
+    session: "Explore Futures",
   },
   {
     index: "02",
-    name: "Forex",
+    name: "Global Forex & Metals",
     href: "/markets/forex",
+    tagline: "Currencies. Macroeconomics. Global Flows.",
     instruments: ["EURUSD", "XAUUSD", "Selected pairs"],
-    focus: "Majors and metals through the London–New York overlap — displacement and repricing.",
-    session: "London · New York overlaps",
+    focus: "Analysis of major currency pairs and precious metals, examining economic developments, price behavior, and global trading sessions.",
+    session: "Explore Forex",
   },
   {
     index: "03",
-    name: "Indian Markets",
+    name: "Indian Financial Markets",
     href: "/markets/india",
+    tagline: "Equities. Indices. Derivatives.",
     instruments: ["NIFTY", "BANKNIFTY", "Indian equities"],
-    focus: "Index derivatives and equities on the NSE — opening structure and intraday momentum.",
-    session: "NSE · 09:15 IST open",
+    focus: "Research across Indian equity indices, index derivatives, and selected equities, supported by structured market analysis and risk evaluation.",
+    session: "Explore Indian Markets",
   },
 ];
 
@@ -34,11 +37,12 @@ export function MarketsSection() {
     <section className="border-t border-border">
       <div className="mx-auto max-w-7xl px-5 py-24 sm:px-8 lg:py-36">
         <RevealText>
-          <SectionHeading index="02" kicker="Coverage" title={<>Three markets.<br />One discipline.</>} />
+          <SectionHeading index="04" kicker="Global Perspective" title={<>Across markets.<br />Beyond boundaries.</>} />
         </RevealText>
         <Reveal delay={0.15}>
           <p className="mt-6 max-w-lg text-sm leading-relaxed text-text-secondary">
-            Different instruments. Different sessions. The same commitment to preparation, risk, and execution.
+            Our research spans major global financial markets, each offering distinct opportunities, complexities,
+            and market dynamics.
           </p>
         </Reveal>
 
@@ -56,6 +60,7 @@ export function MarketsSection() {
                   </span>
                 </div>
                 <h3 className="mt-10 text-2xl font-semibold tracking-tight sm:text-3xl">{m.name}</h3>
+                <p className="micro-label mt-3">{m.tagline}</p>
                 <p className="mt-4 flex-1 text-sm leading-relaxed text-text-secondary">{m.focus}</p>
                 <ul className="mt-8 space-y-1.5">
                   {m.instruments.map((ins) => (

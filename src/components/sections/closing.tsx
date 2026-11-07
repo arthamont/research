@@ -1,44 +1,11 @@
 import Link from "next/link";
 import { Reveal, RevealText } from "@/components/motion/reveal";
-import { SectionHeading, ButtonLink, MicroLabel } from "@/components/ui/primitives";
+import { MicroLabel } from "@/components/ui/primitives";
 import { Wordmark } from "@/components/brand/wordmark";
 
-export function AboutSection() {
-  return (
-    <section className="border-t border-border">
-      <div className="mx-auto max-w-7xl px-5 py-24 sm:px-8 lg:py-36">
-        <div className="grid gap-16 lg:grid-cols-2">
-          <RevealText>
-            <SectionHeading index="09" kicker="Identity" title={<>The person behind<br />the process.</>} />
-          </RevealText>
-          <div>
-            <Reveal delay={0.15}>
-              <p className="text-lg leading-relaxed text-text-secondary">
-                ARTHAMONT is my independent space for trading, research, and documenting the pursuit of better decisions.
-                Across futures, forex, and Indian markets, the objective remains the same: approach uncertainty with
-                preparation, structure, and discipline.
-              </p>
-              <p className="mt-6 text-sm leading-relaxed text-text-faint">
-                No signals. No courses. No performance claims — just the work, documented honestly.
-              </p>
-            </Reveal>
-            <Reveal delay={0.25} className="mt-10">
-              <ButtonLink href="/about" variant="secondary">
-                More about ARTHAMONT
-              </ButtonLink>
-            </Reveal>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 const nav = [
-  { href: "/journal", label: "Journal" },
-  { href: "/outlook", label: "Research" },
-  { href: "/playbook", label: "Playbook" },
-  { href: "/about", label: "About" },
+  { href: "/about", label: "Discover our philosophy" },
+  { href: "/outlook", label: "Explore our research" },
 ];
 
 export function ClosingSection() {
@@ -46,16 +13,21 @@ export function ClosingSection() {
     <section className="relative overflow-hidden border-t border-border">
       <div className="grid-lines pointer-events-none absolute inset-0" aria-hidden />
       <div className="relative mx-auto flex min-h-[85vh] max-w-7xl flex-col items-center justify-center px-5 py-28 text-center sm:px-8">
+        <MicroLabel>Our Commitment</MicroLabel>
         <RevealText>
-          <h2 className="display-xl text-5xl sm:text-7xl lg:text-8xl">
-            The process
+          <h2 className="font-display mt-6 text-5xl font-semibold sm:text-7xl lg:text-8xl">
+            The future is built
             <br />
-            is the point.
+            <span className="text-text-secondary">on principle.</span>
           </h2>
         </RevealText>
         <Reveal delay={0.2}>
-          <p className="mt-8 text-sm tracking-wide text-text-secondary">
-            Observe deliberately. Execute precisely. Review relentlessly.
+          <p className="mx-auto mt-10 max-w-xl text-lg leading-relaxed text-text-secondary">
+            Every enduring institution begins with a vision.
+            <br />
+            Every meaningful achievement demands discipline.
+            <br />
+            And every lasting legacy is defined by time.
           </p>
         </Reveal>
         <Reveal delay={0.35}>
@@ -73,7 +45,7 @@ export function ClosingSection() {
         </Reveal>
         <Reveal delay={0.45} className="mt-20">
           <Wordmark className="text-3xl text-text-faint" />
-          <MicroLabel className="mt-3">Discipline · Precision · Execution</MicroLabel>
+          <MicroLabel className="mt-3">Conviction · Discipline · Longevity</MicroLabel>
         </Reveal>
       </div>
     </section>
