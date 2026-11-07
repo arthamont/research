@@ -19,6 +19,24 @@ const abbr = (now: Date, tz: string) =>
     .formatToParts(now)
     .find((p) => p.type === "timeZoneName")?.value ?? tz;
 
+function tzOffset(now: Date, tz: string): string {
+  try {
+    const v = new Intl.DateTimeFormat("en-US", { timeZone: tz, timeZoneName: "shortOffset" })
+      .formatToParts(now)
+      .find((p) => p.type === "timeZoneName")?.value;
+    return v ?? "";
+  } catch {
+    return "";
+  }
+}
+
+/** "Asia/Kolkata" → "Kolkata (UTC+5:30)" — city name + offset so it's searchable. */
+function tzLabel(now: Date, tz: string): string {
+  const city = tz.split("/").pop()!.replace(/_/g, " ");
+  const off = tzOffset(now, tz).replace("GMT", "UTC");
+  return off ? `${city} (${off})` : city;
+}
+
 export function SessionMonitor({ initial }: { initial: SessionStatus[] }) {
   const [statuses, setStatuses] = useState(initial);
   const [now, setNow] = useState(() => new Date());
@@ -57,8 +75,8 @@ export function SessionMonitor({ initial }: { initial: SessionStatus[] }) {
           ))}
         </select>
         <select value={localTz} onChange={(e) => setLocalTz(e.target.value)} className={`${sel} max-w-52`} aria-label="Local timezone">
-          {TZS.map((tz) => (
-            <option key={tz} value={tz}>{tz.replace(/_/g, " ")}</option>
+          {[...TZS].sort((a, b) => tzLabel(now, a).localeCompare(tzLabel(now, b))).map((tz) => (
+            <option key={tz} value={tz}>{tzLabel(now, tz)}</option>
           ))}
         </select>
       </div>
