@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { EconRow } from "@/lib/econ-calendar";
-import { etTime, sourceLabel } from "@/lib/econ-calendar";
+import { sourceLabel } from "@/lib/econ-calendar";
 import { usMarketHolidays, monthWeeks } from "@/lib/holidays";
 import { DayNoteEditor } from "./day-note";
 import { cn } from "@/lib/utils";
@@ -21,11 +21,32 @@ const IMPACT_TONE: Record<string, string> = {
 
 
 
+const TZS: string[] = typeof Intl.supportedValuesOf === "function" ? Intl.supportedValuesOf("timeZone") : ["Asia/Kolkata", "America/New_York", "UTC"];
+const NY_OFFSETS = [
+  { value: "Etc/GMT+4", label: "NY · UTC-4 (EDT)" },
+  { value: "Etc/GMT+5", label: "NY · UTC-5 (EST)" },
+];
+
+function tzTime(iso: string, tz: string) {
+  return new Intl.DateTimeFormat("en-US", { timeZone: tz, hour: "numeric", minute: "2-digit", hour12: true })
+    .format(new Date(iso))
+    .replace(/\s/g, "")
+    .toLowerCase();
+}
+
+function tzAbbr(tz: string) {
+  return new Intl.DateTimeFormat("en-US", { timeZone: tz, timeZoneName: "short" })
+    .formatToParts(new Date())
+    .find((p) => p.type === "timeZoneName")?.value ?? tz;
+}
+
 export function EconCalendarView({ rows, noteDate, notes }: { rows: EconRow[]; noteDate: string; notes: Record<string, string> }) {
   const [importance, setImportance] = useState<"high" | "med" | null>(null);
   const [source, setSource] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [noteDay, setNoteDay] = useState(noteDate);
+  const [nyTz, setNyTz] = useState("Etc/GMT+5");
+  const [localTz, setLocalTz] = useState("Asia/Kolkata");
 
   const [y0, m0] = noteDate.split("-").map(Number);
   const [view, setView] = useState({ year: y0, month: m0 - 1 });
@@ -80,13 +101,31 @@ export function EconCalendarView({ rows, noteDate, notes }: { rows: EconRow[]; n
               </button>
             )}
           </div>
-          <input
-            type="search"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search releases…"
-            className="w-52 border border-border bg-surface px-3 py-1.5 text-xs text-text placeholder:text-text-faint focus:border-accent focus:outline-none"
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={nyTz}
+              onChange={(e) => setNyTz(e.target.value)}
+              className="border border-border bg-surface px-2 py-1.5 font-mono text-[10px] text-text-secondary focus:border-accent focus:outline-none"
+              aria-label="New York offset"
+            >
+              {NY_OFFSETS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+            <select
+              value={localTz}
+              onChange={(e) => setLocalTz(e.target.value)}
+              className="max-w-56 border border-border bg-surface px-2 py-1.5 font-mono text-[10px] text-text-secondary focus:border-accent focus:outline-none"
+              aria-label="Local timezone"
+            >
+              {TZS.map((tz) => <option key={tz} value={tz}>{tz.replace(/_/g, " ")}</option>)}
+            </select>
+            <input
+              type="search"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Search releases…"
+              className="w-44 border border-border bg-surface px-3 py-1.5 text-xs text-text placeholder:text-text-faint focus:border-accent focus:outline-none"
+            />
+          </div>
         </div>
         <div className="mb-6 flex flex-wrap gap-1.5">
           {(["high", "med"] as const).map((i) => (
@@ -157,7 +196,9 @@ export function EconCalendarView({ rows, noteDate, notes }: { rows: EconRow[]; n
                                 <li key={r.code + r.scheduledAt} className="flex items-start gap-1.5 text-[11px] leading-tight">
                                   <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: IMPACT_TONE[r.importance] }} aria-hidden />
                                   <span className="min-w-0">
-                                    <span className="numeric mr-1 text-[9px] text-text-faint">{etTime(r.scheduledAt).replace(" ET", "")}</span>
+                                    <span className="numeric mr-1 text-[9px] text-text-faint">
+                                      {tzTime(r.scheduledAt, nyTz)}/{tzTime(r.scheduledAt, localTz)}
+                                    </span>
                                     <span className="text-text-secondary">{r.name}</span>
                                     {r.actual !== null && (
                                       <span className="ml-1 font-mono text-[9px] text-long">{r.actual}{r.unit ? ` ${r.unit.split(",")[0].replace(/[^%\w]/g, "")}` : ""}</span>
@@ -188,7 +229,7 @@ export function EconCalendarView({ rows, noteDate, notes }: { rows: EconRow[]; n
               {i === "med" ? "Medium impact" : `${i[0].toUpperCase()}${i.slice(1)} impact`}
             </span>
           ))}
-          <span className="font-mono text-[10px] text-text-faint">Holiday = NYSE closed · Times ET</span>
+          <span className="font-mono text-[10px] text-text-faint">Holiday = NYSE closed · Times: NY / {tzAbbr(localTz)}</span>
           <a href="https://xoomar.com" target="_blank" rel="noopener noreferrer" className="ml-auto font-mono text-[10px] text-text-faint underline-offset-4 hover:text-accent-text hover:underline">
             Data: XOOMAR
           </a>
