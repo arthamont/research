@@ -172,6 +172,7 @@ model UserSettings {
   longTermObjectives   String?  @db.Text
   socialLinks          Json     @default("{}") // { x, instagram, youtube, ... }
   heroJson             Json     @default("{}") // editable homepage hero copy
+  aboutJson            Json     @default("{}") // editable /about page copy
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

@@ -27,6 +27,7 @@ const settingsSchema = z.object({
   longTermObjectives: z.string().optional().nullable(),
   tradingInterests: z.string().optional().nullable(), // comma-separated
   socialLinks: z.string().optional().nullable(), // JSON or "key:url" lines
+  about: z.record(z.string(), z.unknown()).optional(),
   hero: z
     .object({
       eyebrow: z.string().optional(),
@@ -59,12 +60,13 @@ export async function updateSettings(data: unknown) {
     }
   }
 
-  const { hero, ...rest } = d;
+  const { hero, about, ...rest } = d;
   await db.userSettings.upsert({
     where: { userId: user.id },
     update: {
       ...rest,
       heroJson: hero ?? {},
+      aboutJson: (about ?? {}) as object,
       tradingInterests: d.tradingInterests ? d.tradingInterests.split(",").map((s) => s.trim()).filter(Boolean) : [],
       socialLinks: social,
     },
@@ -72,6 +74,7 @@ export async function updateSettings(data: unknown) {
       userId: user.id,
       ...rest,
       heroJson: hero ?? {},
+      aboutJson: (about ?? {}) as object,
       tradingInterests: d.tradingInterests ? d.tradingInterests.split(",").map((s) => s.trim()).filter(Boolean) : [],
       socialLinks: social,
     },

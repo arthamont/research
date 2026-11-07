@@ -6,6 +6,8 @@ import { updateSettings } from "@/server/actions/workspace";
 import { Button } from "@/components/ui/primitives";
 import { field, lbl, useActionForm, FormError, EditorTextarea } from "./generic-forms";
 import { cn } from "@/lib/utils";
+import { mergeAbout } from "@/lib/about-content";
+import { AboutEditor } from "./about-editor";
 
 interface HeroJson {
   eyebrow?: string;
@@ -50,6 +52,7 @@ export function SettingsForm({ settings }: { settings: UserSettings | null }) {
       strip: (settings?.heroJson as HeroJson)?.strip ?? "Futures / Global markets / Research",
       note: (settings?.heroJson as HeroJson)?.note ?? "An independent trading and research initiative with a long-term institutional vision.",
     },
+    about: mergeAbout(settings?.aboutJson as Record<string, unknown> | null),
   });
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
@@ -99,6 +102,9 @@ export function SettingsForm({ settings }: { settings: UserSettings | null }) {
           </div>
         </div>
       </section>
+
+      {/* About page */}
+      <AboutEditor value={form.about} onChange={(v) => setForm((f) => ({ ...f, about: v }))} />
 
       {/* Identity */}
       <section>

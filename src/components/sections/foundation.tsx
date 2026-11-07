@@ -93,7 +93,13 @@ export function FocusSection() {
 
 /* ── 08 — The Vision ─────────────────────────────────────────────────── */
 
-export function VisionSection() {
+export function VisionSection({ paras, quote }: { paras?: string[]; quote?: string }) {
+  const p = paras?.length ? paras : [
+    "Arthamont's ambition extends beyond trading and market research.",
+    "Our long-term vision is to develop a respected financial institution built on analytical excellence, responsible capital stewardship, technological innovation, and disciplined investment principles.",
+    "Over time, that ambition may extend into investment management, private capital, and broader financial services, subject to the necessary capabilities and regulatory authorizations.",
+    "The objective is not simply to participate in financial markets, but to build something meaningful, resilient, and enduring.",
+  ];
   return (
     <section className="border-t border-border bg-bg-elevated">
       <div className="mx-auto max-w-7xl px-5 py-24 sm:px-8 lg:py-36">
@@ -102,22 +108,10 @@ export function VisionSection() {
         </RevealText>
         <Reveal delay={0.15}>
           <div className="mt-10 max-w-2xl space-y-5 text-lg leading-relaxed text-text-secondary">
-            <p>Arthamont&apos;s ambition extends beyond trading and market research.</p>
-            <p>
-              Our long-term vision is to develop a respected financial institution built on analytical excellence,
-              responsible capital stewardship, technological innovation, and disciplined investment principles.
-            </p>
-            <p>
-              Over time, that ambition may extend into investment management, private capital, and broader financial
-              services, subject to the necessary capabilities and regulatory authorizations.
-            </p>
-            <p>
-              The objective is not simply to participate in financial markets, but to build something meaningful,
-              resilient, and enduring.
-            </p>
+            {p.map((t, i) => <p key={i}>{t}</p>)}
           </div>
           <p className="font-display mt-10 border-l-2 border-accent pl-6 text-xl italic text-text sm:text-2xl">
-            Our ambition is generational. Our approach is deliberate.
+            {quote ?? "Our ambition is generational. Our approach is deliberate."}
           </p>
         </Reveal>
       </div>
@@ -127,7 +121,11 @@ export function VisionSection() {
 
 /* ── 09 — Meet the Founder ───────────────────────────────────────────── */
 
-export function FounderSection() {
+export function FounderSection({ paras }: { paras?: string[] }) {
+  const p = paras?.length ? paras : [
+    "With 3 years of experience in software engineering and 2 years in financial markets, Arthamont's founder brings together technology, analytical thinking, and disciplined market research.",
+    "The long-term ambition is to combine financial expertise and technological innovation to build an enduring institution grounded in conviction, discipline, and longevity.",
+  ];
   return (
     <section className="border-t border-border">
       <div className="mx-auto max-w-7xl px-5 py-24 sm:px-8 lg:py-36">
@@ -136,17 +134,10 @@ export function FounderSection() {
         </RevealText>
         <Reveal delay={0.15}>
           <div className="mt-10 max-w-2xl space-y-5 text-lg leading-relaxed text-text-secondary">
-            <p>
-              With 3 years of experience in software engineering and 2 years in financial markets, Arthamont&apos;s
-              founder brings together technology, analytical thinking, and disciplined market research.
-            </p>
-            <p>
-              The long-term ambition is to combine financial expertise and technological innovation to build an
-              enduring institution grounded in conviction, discipline, and longevity.
-            </p>
+            {p.map((t, i) => <p key={i}>{t}</p>)}
           </div>
           <div className="mt-10">
-            <ButtonLink href="/about" variant="secondary">Meet the founder</ButtonLink>
+            <ButtonLink href="/contact" variant="secondary">Meet the founder</ButtonLink>
           </div>
         </Reveal>
       </div>
