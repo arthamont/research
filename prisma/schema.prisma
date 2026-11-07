@@ -482,6 +482,17 @@ model WatchlistItem {
   @@unique([userId, instrumentId])
 }
 
+/// Waitlist signups — visitors interested in future Arthamont entities.
+/// Collected from the "Our wings" cards on /about; public, unauthenticated.
+model WaitlistEntry {
+  id        String   @id @default(cuid())
+  email     String
+  wing      String // "capital" | "partners" | "holdings" | "research"
+  createdAt DateTime @default(now())
+
+  @@unique([email, wing])
+}
+
 /// One private note per day — "how the day is going to behave".
 /// Editable only in the workspace; never rendered publicly.
 model MarketNote {

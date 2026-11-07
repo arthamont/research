@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { MicroLabel } from "@/components/ui/primitives";
 import { Wordmark } from "@/components/brand/wordmark";
 import { Reveal, RevealText } from "@/components/motion/reveal";
+import { WingsSection } from "@/components/sections/wings";
 
 export const revalidate = 300;
 
@@ -286,6 +287,21 @@ export default function AboutPage() {
           <p className="font-display mt-8 text-xl italic text-text sm:text-2xl">
             Built on Principle. Defined by Time.
           </p>
+        </Reveal>
+      </section>
+
+      {/* ── Our wings ── */}
+      <section className="mt-28 border-t border-border pt-16" aria-label="Our wings">
+        <MicroLabel>Our Wings</MicroLabel>
+        <RevealText>
+          <h2 className="font-display mt-4 text-3xl font-medium sm:text-4xl">
+            One master brand. Future entities.
+          </h2>
+        </RevealText>
+        <Reveal delay={0.1}>
+          <div className="mt-10">
+            <WingsSection />
+          </div>
         </Reveal>
       </section>
 
